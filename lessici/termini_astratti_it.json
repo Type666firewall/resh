@@ -1,0 +1,124 @@
+{
+  "_schema": "v0.1 REVERSIBILE — candidati a TERMINE ASTRATTO (presenza lessicale, NON verdetto). Default impostabili; non è uno schema permanente. Il giudizio se un candidato sia un'idea astratta illusoria che cela una definizione normativa/metafisica resta INDUTTIVO.",
+  "_note": "Critica berkeleyana delle idee astratte (Treatise, Introd. §§7-25): un termine generale che pretende di nominare una cosa determinata senza contenuto particolare/ostensibile è il luogo dove si celano stipulazioni normative e positi metafisici. Qui se ne surfaceno i CANDIDATI via morfologia (nominalizzazioni) + lessico curato. Sovra-genera per design: l'LLM filtra rispetto a O. Caveat auto-applicativo: «termine astratto» è esso stesso astratto → strumento C3 strumentale.",
+  "_aggiornabilita": "termini_metafisici è ESPANDIBILE: termini si promuovono via induttivo.promuovi_termine() (canale feedback o richiesta utente, vaglio advisory). tassonomia_occultamento è AGGIORNABILE: aggiungere/rinominare voci qui, i prompt la leggono da qui. Nulla è permanente nel codice.",
+  "tassonomia_occultamento": [
+    {
+      "tipo": "contenuto_determinato",
+      "desc": "il termine ha un referente particolare/ostensibile → NON è astrazione illusoria"
+    },
+    {
+      "tipo": "stipulazione_normativa",
+      "desc": "si dissolve in una definizione che prescrive ('X è ciò che deve…')"
+    },
+    {
+      "tipo": "posito_metafisico",
+      "desc": "nomina un'entità assunta esistente senza contenuto ostensibile"
+    },
+    {
+      "tipo": "ostensione_forma_di_vita",
+      "desc": "la catena finisce in gesto ostensivo / uso condiviso (Berkeley→Wittgenstein)"
+    }
+  ],
+  "suffissi_nominalizzanti": [
+    {
+      "suffisso": "ità",
+      "min_len": 5,
+      "nota": "realtà, oggettività, verità, identità — alta precisione"
+    },
+    {
+      "suffisso": "zione",
+      "min_len": 6,
+      "nota": "astrazione, rappresentazione, relazione"
+    },
+    {
+      "suffisso": "sione",
+      "min_len": 6,
+      "nota": "comprensione, dimensione, estensione"
+    },
+    {
+      "suffisso": "ismo",
+      "min_len": 6,
+      "nota": "positivismo, realismo, oggettivismo"
+    },
+    {
+      "suffisso": "enza",
+      "min_len": 6,
+      "nota": "essenza, presenza, coerenza, evidenza"
+    },
+    {
+      "suffisso": "anza",
+      "min_len": 6,
+      "nota": "sostanza, costanza"
+    },
+    {
+      "suffisso": "ezza",
+      "min_len": 6,
+      "nota": "certezza, verità(arc.), chiarezza"
+    },
+    {
+      "suffisso": "tudine",
+      "min_len": 7,
+      "nota": "attitudine, certitudine"
+    }
+  ],
+  "termini_metafisici": [
+    "realtà",
+    "verità",
+    "essere",
+    "essenza",
+    "natura",
+    "sostanza",
+    "oggettività",
+    "soggettività",
+    "coscienza",
+    "spirito",
+    "materia",
+    "assoluto",
+    "fondamento",
+    "totalità",
+    "identità",
+    "presenza",
+    "origine",
+    "fatto",
+    "fatti",
+    "mondo",
+    "corrispondenza",
+    "rappresentazione",
+    "conoscenza",
+    "evidenza",
+    "necessità",
+    "universale",
+    "infinito",
+    "immediatezza",
+    "oggetto",
+    "soggetto",
+    "evento"
+  ],
+  "stopwords_suffisso": [
+    "momento",
+    "strumento",
+    "movimento",
+    "documento",
+    "argomento",
+    "elemento",
+    "esperimento",
+    "ambiente",
+    "governo",
+    "appartamento",
+    "alimento",
+    "cemento",
+    "formazione",
+    "informazione",
+    "stazione",
+    "porzione",
+    "regione",
+    "stagione",
+    "occasione",
+    "pressione",
+    "tensione",
+    "decisione",
+    "versione",
+    "edizione"
+  ]
+}

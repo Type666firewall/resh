@@ -1,0 +1,84 @@
+{
+  "_schema": "v1",
+  "_note": "Pattern regex per cattura deterministica di fallacie linguisticamente marcate in italiano. La confidence è bassa (0.45-0.65) — vengono confermate/integrate dal classifier NLI mDeBERTa su MAFALDA L2.",
+  "patterns": [
+    {
+      "tipo": "ad_populum",
+      "regex": "\\b(tutti\\s+(sanno|sappiamo|pensano|pensiamo)|nessuno\\s+(nega|dubita|mette\\s+in\\s+dubbio)|chiunque\\s+capisce|è\\s+ovvio\\s+(a|per)\\s+tutti)\\b",
+      "severita": 0.65,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "petitio_principii",
+      "regex": "\\b(ovviamente|chiaramente|evidentemente|com'è\\s+ovvio|come\\s+si\\s+sa)\\b",
+      "severita": 0.45,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "ad_verecundiam",
+      "regex": "\\bcome\\s+(disse|sostiene|sosteneva|afferma|affermava|dimostra|dimostrò|ha\\s+detto|scriveva)\\s+[A-Z][a-zà-ÿ]+",
+      "severita": 0.55,
+      "confidence": 0.6
+    },
+    {
+      "tipo": "ad_hominem",
+      "regex": "\\b(è\\s+solo\\s+un|non\\s+è\\s+altro\\s+che\\s+un|è\\s+un\\s+(idiota|ignorante|incompetente|pazzo|stupido)|un\\s+individuo\\s+del\\s+genere\\s+non)\\b",
+      "severita": 0.7,
+      "confidence": 0.65
+    },
+    {
+      "tipo": "false_dilemma",
+      "regex": "\\b(o\\s+\\S+\\s+o\\s+\\S+|delle\\s+due\\s+l'una|non\\s+c'è\\s+altra\\s+via|l'unica\\s+alternativa|o\\s+si\\s+è\\s+\\S+\\s+o\\s+si\\s+è)\\b",
+      "severita": 0.55,
+      "confidence": 0.5
+    },
+    {
+      "tipo": "slippery_slope",
+      "regex": "\\b(se\\s+permettiamo\\s+\\S+\\s+(poi|allora)|porterà\\s+inevitabilmente\\s+a|finiremo\\s+per|sarà\\s+l'inizio\\s+della\\s+fine)\\b",
+      "severita": 0.6,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "hasty_generalization",
+      "regex": "\\b(tutti\\s+i\\s+\\S+\\s+sono|nessun\\s+\\S+\\s+è\\s+mai|sempre\\s+e\\s+comunque|in\\s+ogni\\s+caso\\s+senza\\s+eccezioni)\\b",
+      "severita": 0.55,
+      "confidence": 0.5
+    },
+    {
+      "tipo": "appeal_to_emotion",
+      "regex": "\\b(pensate\\s+(ai|alle)\\s+(bambini|vittime|innocenti)|come\\s+possiamo\\s+permettere|sarebbe\\s+orribile\\s+se|non\\s+abbiate\\s+pietà)\\b",
+      "severita": 0.55,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "post_hoc",
+      "regex": "\\b(dopo\\s+\\S+\\s+è\\s+(successo|accaduto|venuto)|subito\\s+dopo\\s+\\S+\\s+iniziò|da\\s+quando\\s+\\S+\\s+tutto)\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "straw_man",
+      "regex": "\\b(in\\s+pratica\\s+sta\\s+dicendo\\s+che|ciò\\s+che\\s+(sostieni|dici)\\s+è\\s+che|quindi\\s+secondo\\s+(te|voi)\\s+dovremmo)\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "false_analogy",
+      "regex": "\\b(è\\s+come\\s+(dire|sostenere)\\s+che|è\\s+esattamente\\s+come|è\\s+identico\\s+a|paragonabile\\s+a)\\b",
+      "severita": 0.4,
+      "confidence": 0.4
+    },
+    {
+      "tipo": "circular_reasoning",
+      "regex": "\\b(perché\\s+è\\s+così|è\\s+vero\\s+perché\\s+lo\\s+dice|si\\s+sa\\s+che\\s+è\\s+(vero|giusto))\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "red_herring",
+      "regex": "\\b(la\\s+vera\\s+questione\\s+è|il\\s+punto\\s+è\\s+un\\s+altro|cambiando\\s+discorso|piuttosto\\s+(parliamo|consideriamo))\\b",
+      "severita": 0.45,
+      "confidence": 0.4
+    }
+  ]
+}

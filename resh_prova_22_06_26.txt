@@ -1,0 +1,334 @@
+--- PAGE 22 ---
+
+Beyond the limit 
+1 
+The limits of thought 
+Finitude is a basic fact of human existence. Whether one treats this as a source 
+of sorrow or of relief, it is without doubt that there are limits to whatever 
+people want to do, be they limits of human endurance, resources, or of life 
+itself. What these limits are, we can sometimes only speculate; but that they are 
+there, we know. For example, we can only guess what the limit time for 
+running a mile is; but we know that there is a limit, set by the velocity of 
+light, if not by many more mundane things. 
+This book is about a certain kind of limit; not the limits of physical endea-
+vours like running a mile, but the limits of the mind. I will call them limits of 
+thought, though 'thought', here, should be understood in its objective, 
+Fregean, sense, as concerning the contents of our intensional states, not our 
+subjective consciousness. 1 One might also describe them as conceptual limits, 
+since they concern the limits of our concepts. Whatever one calls them, by the 
+end of the book I will have given a precise structural characterisation of the 
+limits in question, in the shape of the lnclosure Schema. For the present, some 
+examples will suffice to indicate what I have in mind: the limit of what can be 
+expressed; the limit of what can be described or conceived; the limit of what 
+can be known; the limit of iteration of some operation or other, the infinite in 
+its mathematical sense. 
+Limits of this kind provide boundaries beyond which certain conceptual 
+processes (describing, knowing, iterating, etc.) cannot go; a sort of conceptual 
+ne plus ultra. The thesis of the book is that such limits are dialetheic; that is, 
+that they are the subject, or locus, of true contradictions. The contradiction, in 
+each case, is simply to the effect that the conceptual processes in question do 
+cross these boundaries. Thus, the limits of thought are boundaries which 
+cannot be crossed, but yet which are crossed. 
+In each of the cases, there is a totality (of all things expressible, describ-
+able, etc.) and an appropriate operation that generates an object that is both 
+1 Peter Slezak has suggested to me that there may be an important connection between the 
+phenomena that will concern us and subjective consciousness too. See Slezak (1983).
+
+--- PAGE 23 ---
+
+4 
+Introduction 
+within and without the totality. I will call these situations Closure and 
+Transcendence, respectively. In general, the arguments both for Closure and 
+for Transcendence use some form of self-reference, a method that is both 
+venerable and powerful.2 Closure is usually established by reflecting on the 
+conceptual practice in question. In a polemical context this can appear as an 
+ad hominem argument. Arguments for Transcendence are of more varied 
+kinds; often they involve applying a theory to itself. Some of them are 
+more technical; a paradigm of these is diagonalisation, a technique familiar 
+from the logical paradoxes. This construction is precisely a boundary-tearing 
+heuristic which, given any boundary of a suitable kind, can be applied to 
+violate it. 
+2 
+Dialetheism 
+That a contradiction might be true, or that dialetheism (the view that there 
+are true contradictions) makes sense, may still be abhorrent, and even threa-
+tening, to many contemporary English-speaking philosophers. More likely 
+than not, even the suggestion of it will be met with a look of blank incom-
+prehension. How could a contradiction be true? After all, orthodox logic 
+assures us that for every statement, a, only one of a and -.a is true. The 
+simple answer is that orthodox logic, however well entrenched, is just a 
+theory of how logical particles, like negation, work; and there is no a priori 
+guarantee that it is correct. 3 
+Given two states of affairs, there are, in general, four possibilities: one but 
+not the other holds, vice versa, both or neither. In particular, given the 
+states of affairs a is true and a is false, there are, without begging any 
+questions, those four possibilities. The standard logical theory just assumes 
+that only two of them should be allowed for. Slightly more liberal views 
+allow that a third may arise, the neither case. If nothing else, symmetry 
+suggests that the fourth should be countenanced. Suppose, then, that we 
+allow sentences to take as semantic values one of the corresponding four 
+subsets of the set {true, false}. How do the truth (and falsity) conditions for, 
+for example, negation and conjunction now work? Exactly as you would 
+expect. -.a is true iff a is false, and vice versa. Similarly, a/\ f3 is true iff 
+both conjuncts are true, and false if at least one conjunct is false. In parti-
+2 Arguably, it is more than that: it characterises philosophy itself. See Priest (199la). 
+3 Thus, when Quine ((1970), p. 81) complains that someone who maintains that a contra-
+diction might be true just does not know what they arc talking about, this is exactly analogous to a 
+Newtonian physicist complaining that someone who holds that time might run at different rates 
+in different frames of reference just does not know what they are talking about. For further 
+discussion, see Priest (1987), ch. 14.
+
+--- PAGE 24 ---
+
+Introduction 
+5 
+cular, if a is both true and false, so is -.a, and so is a/\ -.a. Hence, a 
+contradiction can be true (if false as well).4 
+Since a logical theory of this kind is so easy to construct, it is worth asking 
+why dialetheism should be so outrageous to the sensibility of modern philo-
+sophers. The answer is, I am afraid, sociological rather than rational. Until 
+Aristotle, the idea that a contradiction might be true was a highly contested 
+one. 5 Aristotle went to great lengths to argue against the idea in book 4 of the 
+Metaphysics. 6 Because of Aristotle's magisterial authority in the Middle Ages, 
+the subject became closed; and, unlike most other subjects on which Aristotle 
+pronounced, was not substantially reopened subsequently - at least until 
+recently. Few philosophers (with the notable exception of Hegel and some 
+of his intellectual descendants) challenged Aristotle. And I know of no histor-
+ical defence of the law of non-contradiction since Aristotle worth mentioning. 
+Is this because Aristotle's arguments were conclusive? Hardly. Arguably, they 
+do not work at all. But even if they were ultimately correct, they could not 
+close debate on the issue: his major argument is so tortured that it is hard to 
+tell what it is, and the others are little more than throw-away remarks.7 
+So what other arguments are there? Apart from an appeal to the received 
+logical theory, which we have already seen simply to beg the question, the most 
+common is that a contradiction cannot be true since contradictions entail 
+everything, and not everything is true. This argument is no better than an 
+appeal to the received semantics. Granted, not everything is true; but on the 
+alternative semantics sketched above, as should be clear, the argument from 
+a/\ -.a to an arbitrary f3 need not preserve truth, and so is not valid.8 More 
+subtle arguments are to the effect that some crucial notion or other, for 
+example, truth, validity, or rationality, requires consistency. I shall not take 
+up these issues here. All that it is necessary to note is that these arguments, 
+whatever they are, are neither obvious nor obviously correct. It is thus foolish 
+to close one's mind to the possibility of dialetheism. 
+I certainly do not intend to imply that these arguments should not be 
+discussed: they raise profound issues at the very heart of logic. I have dis-
+cussed them in In Contradiction ( 1987), which contains a defence of dialethe-
+4 Semantics of this kind can easily be made rigorous. Details can be found in section 1 of the 
+technical appendix to Part 3 of the book. There, I ignore the neither case, for reasons given in 
+Priest (1987), 4.7. 
+5 See, for example, Dancy (1975), ch. 3. 
+6 In the same book, he argues against the possibility of a statement being neither true nor false, 
+though in other places, for example, ch. 9 of De lnterpretatione, he appears to show a good deal 
+more sympathy with that idea. 
+7 The arguments are described, analysed and rejected in Lukasiewicz (1971) and Dancy 
+(1975). 
+8 Similarly, the form of inference usually called the disjunctive syllogism (a, ~a V f3 f- {3) is 
+invalid. Let a be both true and false, and f3 just plain false. Then the premises of the syllogism are 
+true (since a disjunction is true iff one disjunct is) but the conclusion is not.
+
+--- PAGE 25 ---
+
+6 
+Introduction 
+ism, and to which I would refer readers for further details. In a sense, In 
+Contradiction starts where Part 3 of this book leaves off: with dialetheism and 
+the paradoxes of self-reference. Perhaps more importantly, the current inves-
+tigations are an application of the main thesis of that book to one particular 
+area, a more detailed investigation of one region of the transconsistent. 
+3 
+The history of limits 
+The relationship between the limits of thought and contradiction might be 
+described as a vein that runs prominently through the history of Western 
+philosophy - except that it is more like a major artery.9 I have therefore 
+chosen to structure this book as a series of case-studies on aspects of the 
+thought of various historical philosophers. 10 If a philosopher does not appear 
+in these pages I certainly do not intend to imply that the limits of thought do 
+not play some role in their work. Historians of ideas soon learn - to their 
+dismay - that their subject appears to be mathematically dense: between any 
+two people who wrote on the matter there appears to be another. Thus, some 
+selection must be made. I have chosen those philosophers who have made 
+contributions to the matter, in the form of interesting ideas and arguments. 
+Whether this interest is objective or merely subjective, I leave the reader to 
+judge. 
+Although the material in the book is heavily historical, the book is not 
+primarily an historical one. My interest throughout is in the substantial thesis 
+concerning the dialetheic nature of limits of thought; the historical material is a 
+vehicle for this. For this reason, and because I do not want the wood to be 
+missed for the trees, I have not attempted discussions that an historian of 
+philosophy might consider balanced. If I have tipped the scales in my favour, 
+I ask that this be forgiven in the context. The fact that all of the interpretations 
+fit neatly into a grander scheme says something in favour of each; and I hope 
+that my interpretations of some of the philosophers involved are interesting in 
+their own right. 
+4 
+The structure of the book 
+In Part 1 of the book, we will look at a number of pre-Kantian philosophers in 
+whose work the limits of thought figure. Contradiction appears at various 
+places in these works, though often below the surface. These philosophers 
+9 I suspect that the same is true of Eastern philosophy too, though my knowledge of this is 
+very limited. 
+10 This requires a good deal of quoting. All italics in quotations are original unless otherwise 
+specified. In accordance with Cambridge University Press house style, any ellipses at the begin-
+ning or end of a quotation have been omitted.
+
+--- PAGE 26 ---
+
+Introduction 
+7 
+had intimations of the contradictory nature of the limits, and lay the ground 
+for those who came later. Part 2 looks at the classic texts of Kant and Hegel. 
+Between them, these two writers provide the first clean recognition (though in 
+Kant's case, a rather grudging one) and theorisation of the situation. Their 
+understanding was of an informal kind, however. A formal articulation of the 
+structure involved was realised in subsequent discussions of the paradoxes of 
+self-reference. Part 3 turns to this. In it, we will obtain a precise formal 
+articulation of the phenomenon that concerns us. In Part 4 we turn to the 
+philosophy of language. Many of the traditional problems of philosophy have 
+found their modern formulations as problems about language; the one with 
+which we are concerned is no different. In this part of the book, we will look at 
+the realisation of the phenomenon in that area. 
+As will be evident, the case-studies we will cover in the book appear roughly 
+in chronological order. One important thing that we will see as we go along is 
+the emergence of a notable historical pattern. This may not be obvious in the 
+initial parts of the book: it may appear that I am dealing with a number of 
+disparate and unconnected phenomena. But, like the events in a detective 
+story, they will all fall into place by the end. If the material strikes the reader 
+as lacking unity at the start, I would just ask for a little patience. 
+It should be said straight away that most of the philosophers I discuss in the 
+book would not have seen their work in terms of the pattern I have painted. 
+Indeed, the thought that a contradiction might be true would have been 
+anathema to most of them. However, a fuller understanding of philosophies, 
+like that of people, can often be obtained in the light of what has been 
+repressed. This is why an examination of the pertinent aspects of the work 
+of these philosophers in the context of a self-conscious dialetheism is, I think, 
+illuminating. 
+The most notable exception to the historical repression of contradiction is 
+Hegel. He, above all philosophers, understood the dialetheic nature of the 
+limits of thought, though his frustratingly obscure literary style may well 
+cloak this fact from the casual reader (if any reader of Hegel could be described 
+as casual). The chapter on Hegel is therefore the lynch-pin of the book. Like 
+the vertex of a light cone, it focuses all the rays of thought that come before, as 
+well as all those that come after. 
+5 
+... and the role of logic in it 
+Throughout the book I make use of the language of modern logic where this is 
+appropriate. In the third part of the book, this is entirely unavoidable. Despite 
+this, I hope that the book - or its main import, anyway - will be intelligible to 
+people who know little logic. A first course should suffice. Even in the third 
+part of the book I have tried to explain technical notions in such a way that 
+they are intelligible to readers who are not logicians, provided only that they
+
+--- PAGE 27 ---
+
+8 
+Introduction 
+are prepared to take the material slowly. And the detailed arguments in this 
+part of the book can usually be skipped without doing too much damage to the 
+reader's understanding of the main points. 
+The logical notation I use throughout is entirely standard (or one of the 
+standard onesll). Any non-standard notation is explained where it is intro-
+duced (though non-logicians might like to note that 'iff' is an abbreviation for 
+'if and only if'). A word should be said about the conditional, ---+,however. I 
+intend the issues in this book to be independent of theories of conditionality, in 
+as far as this is possible. Hence I shall use the arrow as a generic conditional. 
+Where the argument turns on some quite specific feature of the conditional, I 
+shall usually comment on this fact. 
+The book, then, is a blend of logic and the history of philosophy. If it be an 
+unusual blend, I trust it may still be a fruitful one. I hope that it gives all who 
+read it a little of the pleasure it has given me to write it. Naturally, I would like 
+to persuade the reader both that the limits of thought are dialetheic and that 
+the application of this thesis illuminates the history of certain central aspects of 
+philosophy. But even if the book does not do this, I hope that it will at least 
+cause the reader to transcend the limits of their own thoughts, forcing them to 
+go where no thought (or anyway, no thought of theirs) has gone before. 
+11 Specifically, it is that of (for example) Bell and Machover (1977), sections 4, 5.
+
+--- PAGE 28 ---
+
+Part 1 
+The limits of thought 1n pre-Kantian 
+philosophy 
+It would, I think, be enough to destroy any ... positive idea of the infi-
+nite to ask him that has it, whether he could add to it or no. 
+John Locke, An Essay Concerning Human Understanding
+
+--- PAGE 30 ---
+
+1 The limits of expression 
+Introduction 
+Four limits of thought in particular will concern us in the book: the limits of 
+the expressible, the limits of the iterable (the mathematical infinite), the limits 
+of cognition, and the limits of conception. There is, as we shall see in due 
+course, a close connection between these things. However, no one before Kant 
+perceived this clearly. In the first part of the book we will look at ways that 
+these various limits arose in pre-Kantian philosophy. This will involve us in 
+looking at a number of topics that may appear, initially, to have little to do with 
+each other. As I said in the Introduction of the book, if this is so, patience will, 
+I hope, be rewarded. 
+The first limit we will be concerned with here is the limit of the expressible, 
+which is, perhaps, the most fundamental of the limits that will occupy us in the 
+book. One might suppose, for a number of reasons, that features of the (non-
+linguistic) world are such as to transcend the ability of language to express 
+them. If this is indeed so, then attempts to say what these are, are liable to end 
+up in contradiction. For in saying what those features are, one is liable to say 
+the unsayable. 
+In this chapter we will look at three reasons for supposing there to be 
+features of the world that transcend language. Good candidates for features 
+of the world that are liable to fall into this category are ones that might be 
+thought to constitute ultimate reality, in some sense; for example, fundamental 
+matter or God. We will look at an account of each of these two things that 
+places it in the category of the inexpressible: Aristotle's account of prime 
+matter, and Cusanus' account of God. First, however, we will start with a 
+much more radical reason for the existence of the inexpressible; one that, if it 
+were correct, would show that the whole of reality is like this: Cratylus' view of 
+the flux of meaning. 
+1.1 
+The flux 
+Cratylus was a philosopher of the fifth century BC, a rough contemporary of 
+Socrates, and a follower of the philosopher Heraclitus. Heraclitus held,
+
+--- PAGE 31 ---
+
+12 
+The limits of thought in pre-Kantian philosophy 
+famously, that everything is in a state of change or flux. 1 What, exactly, he 
+meant by this is somewhat moot, but we may distinguish a weaker and a 
+stronger interpretation. For something to be in a state of change it is arguably 
+necessary and sufficient for it to be in the process of losing some of its proper-
+ties. The weaker interpretation is simply that everything is changing in this 
+sense. A much stronger interpretation is that everything is losing all of its 
+properties. After all, if everything is changing, then the fact that x is P is 
+changing. Whatever the historical Heraclitus held (and there is no particular 
+reason to suppose that he held the strong form of the doctrine2), Cratylus 
+himself held the strong form. 
+The weak form of the doctrine is a very plausible one, at least if we 
+restrict ourselves to the material world. Given that there are two things in 
+the cosmos that are in motion with respect to each other (which seems 
+beyond doubt), then it follows that everything is in motion with respect to 
+at least one thing. Hence, everything is changing its position with respect to 
+something, and so is changing one of its properties. The stronger form 
+appears less plausible. Australia, for example, is in the Southern hemisphere; 
+it was yesterday, and will be tomorrow. Here, then, is a property of Australia 
+that is not changing. Of course, Australia is in a process of continental drift, 
+and this may have taken it into the Southern hemisphere, and may one day 
+take it out. But this is hardly to say that this property is changing now. 
+There is a possible reply here, however. If we are thinking not in terms of 
+days and weeks, but in terms of geological epochs, then it becomes much 
+more natural to say that Australia's being in the Southern hemisphere is now 
+(in this epoch) changing. Thus, with more generous time spans, the stronger 
+thesis becomes more plausible. 
+In due course the question of whether the meanings of words and sentences 
+are changing will arise. Whilst it can hardly be maintained that the meanings of 
+words change overnight, it certainly does seem to be true that they are chan-
+ging, provided we concern ourselves with a sufficiently generous time span. 
+Over hundreds of years most words change their usages and hence their 
+meanings. Meanings, too, are therefore subject to the stronger version of 
+Heraclitus' thesis. 
+1.2 
+Plato against Cratylus 
+Cratylus' strong version of the doctrine of flux was attacked by Plato. This is 
+primarily in the Theaetetus, 18lb-183c. The relevant part of the argument goes 
+1 See Barnes ( 1979), ch. 4. 
+2 Ibid., p. 69.

@@ -1,0 +1,108 @@
+{
+  "_schema": "v1.1",
+  "_note": "Marker pre-detection Trilemma di Münchhausen. Estratti da REPORT §7, SCHEMA §1 e gold dataset. Bilingue it/en (il dataset contiene testi in entrambe le lingue). Confidence bassa: segnali per il confronto det/ind, non verdetti. Il MODO (USE vs MENTION) NON è determinabile dal marker da solo.",
+  "markers": [
+    {
+      "corno": "C1",
+      "sottotipo": "C1_esplicito",
+      "regex": "\\b(all'infinito|ad infinitum|regresso infinito|regresso\\s+delle\\s+cause|rimanda\\s+ancora|richiede\\s+a\\s+sua\\s+volta|and so on and so forth|regressus\\s+in\\s+infinitum|catena\\s+infinita|infinite\\s+regress|sequence\\s+of\\s+causes|run\\s+back\\s+to\\s+infinity|can't\\s+go\\s+on\\s+forever)\\b",
+      "confidence": 0.5
+    },
+    {
+      "corno": "C1",
+      "sottotipo": "C1_meta_giustificazione",
+      "regex": "\\b(dependence\\s+all\\s+the\\s+way\\s+down|giustificazione\\s+della\\s+giustificazione|fondare\\s+il\\s+fondamento|justification\\s+of\\s+justification)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C2",
+      "sottotipo": "C2_viziosa_diretta",
+      "regex": "\\b(circolo\\s+vizioso|circolarità\\s+viziosa|petitio\\s+principii|pre-comprensione|presuppone\\s+ciò\\s+che\\s+intende\\s+dimostrare|vicious\\s+circle|circular\\s+reasoning|begging\\s+the\\s+question|presupposes\\s+what)\\b",
+      "confidence": 0.5
+    },
+    {
+      "corno": "C2",
+      "sottotipo": "C2_viziosa_simmetrica",
+      "regex": "\\b(circolarità\\s+simmetrica|si\\s+fondano\\s+reciprocamente|mutual\\s+dependence|mutually\\s+presuppose|co-costituiscono|co-constitute)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C2",
+      "sottotipo": "C2_costitutiva_apel",
+      "regex": "\\b(negarlo\\s+lo\\s+afferma|élenchos|auto-confuterebbe\\s+performativamente|Selbstbegründung|confutazione\\s+performativa|contraddizione\\s+performativa|performative\\s+contradiction|self-refuting|refutes\\s+itself)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C2",
+      "sottotipo": "C2_virtuosa_autopoietica",
+      "regex": "\\b(auto-referenziale|autopoiesi|autopoietic|circolarità\\s+costitutiva|circolarità\\s+virtuosa|circolo\\s+ermeneutico|coerenza\\s+interna\\s+come\\s+criterio|self-referential|hermeneutic\\s+circle|mutual\\s+relation|rapporto\\s+reciproco|congruent.{0,20}phenomenon)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_dogmatico_nascosto",
+      "regex": "\\b(è\\s+ovvio|è\\s+evidente\\s+che|per\\s+definizione|auto-evidente|self-evident|self-authenticating|è\\s+senz'altro\\s+certo|dogmatismo|Eleatic\\s+assumption|it\\s+is\\s+obvious|it\\s+is\\s+clear\\s+(enough|that)|it\\s+is\\s+impossible\\s+that|beyond\\s+(all\\s+)?doubt|without\\s+question|I\\s+am\\s+certain\\s+that|clearly\\s+and\\s+distinctly|masquerade)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_modale_mascherato",
+      "regex": "\\b(deve\\s+esserci|non\\s+può\\s+che|si\\s+deve\\s+credere|occorre|bisognerebbe\\s+rinvenire|necessariamente|non\\s+può\\s+non\\s+essere|must\\s+be|cannot\\s+but|there\\s+must\\s+exist|necessarily|we\\s+must\\s+assume|we\\s+must\\s+recognize|precondition.{0,15}must)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_strumentale_dichiarato",
+      "regex": "\\b(assumiamo|poniamo\\s+per\\s+ipotesi|per\\s+convenzione|postulato|supremo\\s+indizio|assioma\\s+operativo|poniamo\\s+come\\s+principio|we\\s+assume|we\\s+postulate|we\\s+take\\s+as\\s+given|axiom|as\\s+a\\s+starting\\s+point|ideal\\s+element|we\\s+present.{0,30}principles)\\b",
+      "confidence": 0.3
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_intuizionistico",
+      "regex": "\\b(intuizione\\s+immediata|νοῦς|principio\\s+primo|aletheia|auto-evidenza|manifestatività|fondamento\\s+fenomenologico|lumen\\s+naturale|natural\\s+light|by\\s+the\\s+natural\\s+light|clear\\s+and\\s+distinct\\s+perception|I\\s+clearly\\s+(and\\s+distinctly\\s+)?perceive|immediate\\s+intuition|first\\s+principle|innate\\s+idea)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_teologico",
+      "regex": "\\b(Dio\\s+garante|causa\\s+esterna|spirito\\s+che\\s+produce|Causa\\s+Sui|Dio\\s+non\\s+ingannatore|Dio\\s+verace|fondamento\\s+divino|garante\\s+divino|perfettissimo|God.{0,15}(cannot|would\\s+never)\\s+deceive|God.{0,10}(guarantee|veracious|supremely\\s+good)|omnipotence\\s+of\\s+God|preestablished\\s+harmony|divine.{0,10}(attribute|perfection|nature))\\b",
+      "confidence": 0.5
+    },
+    {
+      "corno": "C3",
+      "sottotipo": "C3_psicologistico",
+      "regex": "\\b(immediatamente\\s+percepiti\\s+dalla\\s+mente|conoscenza\\s+immediata|giudico\\s+senza\\s+prova|non\\s+possono\\s+essere\\s+comprovati|certezza\\s+interiore|evidenza\\s+interiore|immediately\\s+perceived|I\\s+know\\s+from\\s+experience|faculty\\s+of\\s+judgment|given\\s+to\\s+me\\s+by\\s+nature)\\b",
+      "confidence": 0.4
+    },
+    {
+      "corno": "INCL",
+      "sottotipo": "INCL_meta_posizione",
+      "regex": "\\b(lo\\s+specchio\\s+non\\s+rispecchia|tracciare\\s+un\\s+limite\\s+al\\s+pensiero|pensare\\s+entrambi\\s+i\\s+lati|throwing\\s+away\\s+the\\s+ladder|totalità\\s+del\\s+reale|meta-?(posizione|criterio|livello)|punto\\s+archimedeo|archimedean\\s+point|visione\\s+sulle\\s+visioni|nessun\\s+criterio\\s+neutrale|meta-?criterio\\s+neutrale|auto-?confut\\w+|weltanschauung|torre\\s+epistemologica|sopravvive\\s+alla\\s+decostruzione|view\\s+from\\s+nowhere)\\b",
+      "confidence": 0.35
+    },
+    {
+      "corno": "INCL",
+      "sottotipo": "INCL_osservatore",
+      "regex": "\\b(sguardo\\s+panoramico|panottico|osservatore\\s+esterno(\\s+alla\\s+totalità)?|fuori\\s+dal\\s+sistema\\s+per\\s+descriverlo|punto\\s+di\\s+vista\\s+di\\s+dio|god'?s.?eye|al\\s+di\\s+fuori\\s+di\\s+ess[ao]|esterno\\s+a[dl]?\\s+(dominio|sistema|essa|U\\b)|totalità\\s+(della\\s+realtà|del\\s+pensiero|dell'esperienza)|O\\s*[∈∉]\\s*U|osservare\\s+.{0,30}dal\\s+(cielo|di\\s+fuori|esterno)|soggetto\\s*/\\s*oggetto)\\b",
+      "confidence": 0.35
+    },
+    {
+      "corno": "INCL",
+      "sottotipo": "INCL_auto_referenza",
+      "regex": "\\b(auto-?referenz\\w+|self-?referen\\w+|si\\s+applica\\s+(anche\\s+)?a\\s+s[eé](\\s+stess[oa])?|applicat[oa]\\s+a\\s+s[eé]\\s+stess[oa]|vale\\s+anche\\s+per\\s+s[eé]|fond[ai](re|rsi)?\\s+se\\s+stess[oa]|auto-?(fondazione|costruzione|inclusione|modellazione|esenzione|esent\\w+|giustificazione)|si\\s+auto-?\\w+|descriv\\w+\\s+(tutta\\s+la\\s+realtà|l'intera\\s+realtà|tutto)|parte\\s+del\\s+dominio\\s+che\\s+descrive|T\\s*[∈∉]\\s*U|circolarità\\s+(virtuosa|produttiva|generativa)|processo\\s+ricorsivo|ricorsivit\\w+|applies\\s+to\\s+itself|exempts?\\s+itself|cadendo\\s+nel\\s+circolo)\\b",
+      "confidence": 0.35
+    },
+    {
+      "corno": "INCL",
+      "sottotipo": "INCL_limite_pensiero",
+      "regex": "\\b(limit[ei]\\s+del\\s+(pensiero|pensabile|dicibile|linguaggio|conoscibile|mondo)|oltre\\s+(i\\s+limiti|il\\s+limite)|dentro\\s+e\\s+fuori|pensare\\s+ciò\\s+che\\s+non\\s+è\\s+pensiero|ineffabile|indicibile|non-?senso\\s+\\w*|limits?\\s+of\\s+thought|beyond\\s+(the\\s+limits|thought)|unthinkable|unsayable|esterno\\s+al\\s+dominio|totalità\\s+del\\s+pensiero|tacern[e]|dal\\s+di\\s+dentro)\\b",
+      "confidence": 0.35
+    },
+    {
+      "corno": "INCL",
+      "sottotipo": "INCL_classica",
+      "regex": "\\b(insieme\\s+di\\s+tutti\\s+gli\\s+insiemi|set\\s+of\\s+all\\s+sets|paradosso\\s+d(el\\s+mentitore|i\\s+russell)|mentitore|liar\\s+paradox|russell('s)?\\s+paradox|zermelo\\s+(e|and)\\s+russell|burali-?forti|questa\\s+frase\\s+è\\s+falsa|this\\s+sentence\\s+is\\s+false|schema\\s+di\\s+inclosura|inclosure\\s+schema|inclosur[ae]|δ\\s*\\(\\s*Ω\\s*\\)|trascendenza\\s+e\\s+chiusura|chiusura\\s+semantica|semantic(ally)?\\s+clos\\w+|operatore\\s+diagonale|argomento\\s+diagonale|diagonalizzazion\\w+|denotazione\\s+di\\s+questo\\s+(stesso\\s+)?termine|denotation\\s+of\\s+this\\s+very\\s+term|paraconsistent\\w*|paraconsistenz?\\w*|dialethe\\w+|dialetei\\w+|contraddizioni\\s+vere|true\\s+contradictions|paradoxes\\s+of\\s+set\\s+theory)\\b",
+      "confidence": 0.4
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "_nota": "Corpus stress resh — testi CONGELATI, aspettative PRE-REGISTRATE prima di ogni run (2026-06-11). Ordine ε impegnativo: eps(S1)<eps(S5) · eps(S1)<eps(S6) · eps(S2)<eps(S5).",
+  "ordine_eps": [
+    [
+      "S1",
+      "S5"
+    ],
+    [
+      "S1",
+      "S6"
+    ],
+    [
+      "S2",
+      "S5"
+    ]
+  ],
+  "testi": [
+    {
+      "id": "S1",
+      "file": "S1_strawman_manipolativo.txt",
+      "sha256": "e853609903cf551347d949464c343e27b95249fc78ec613693d2db65ef65b8b3",
+      "char": 459,
+      "fonte": "C:\\Users\\Anton\\Desktop\\resh\\Abstract dataset\\src_strawman.txt",
+      "aspettative": {
+        "eps": "fascia bassa",
+        "malafede": "marcata (latente autoritario)",
+        "fallacie": ">0"
+      }
+    },
+    {
+      "id": "S2",
+      "file": "S2_dogmatico_corrispondentista.txt",
+      "sha256": "2b93a44227cb48c619f97fa01a7421eb0dd406388d96555760750ca122741505",
+      "char": 517,
+      "fonte": "congelato in-manifest",
+      "aspettative": {
+        "trilemma": "C3 USE",
+        "inclosura": "possibile INCL_osservatore",
+        "eps": "medio-basso"
+      }
+    },
+    {
+      "id": "S3",
+      "file": "S3_sonda_inclosura.txt",
+      "sha256": "0a61fa3dbfa66fc1c6e0956a37155f0da8fb1a7bba862f98945d7187f6c63b1b",
+      "char": 354,
+      "fonte": "congelato in-manifest",
+      "aspettative": {
+        "inclosura": "forma presente, modo USE, risposta ACCETTA"
+      }
+    },
+    {
+      "id": "S4",
+      "file": "S4_mu_priest_diagnosis.md",
+      "sha256": "f3878c22d65b20ed91df1facace98e56d8e4664473579524af439486f2807972",
+      "char": 21677,
+      "fonte": "C:\\Users\\Anton\\Desktop\\resh\\vault_organizer\\vault_copia\\filosofi\\temi\\Misteri\\μ — Priest e lo Schema di Inclosura_ Decostruzione e Estrazione.md",
+      "aspettative": {
+        "inclosura": "modo DIAGNOSIS (non USE!)",
+        "trilemma": "DIAGNOSIS-heavy"
+      }
+    },
+    {
+      "id": "S5",
+      "file": "S5_cozzo_epistemic_truth_IT.md",
+      "sha256": "fb00ac072cb823658a06b623a3f1236429b4fd61c31492a1aeef98c93a18add0",
+      "char": 126131,
+      "fonte": "C:\\Users\\Anton\\Desktop\\resh\\tests\\epistemic_truth_IT.md",
+      "aspettative": {
+        "eps_doc": "~0.51 (riferimento misurato Ψ_fb00ac072cb8_D001)"
+      }
+    },
+    {
+      "id": "S6",
+      "file": "S6_neutro_simboli_logici.md",
+      "sha256": "10f0bd043c10dee46f0f0a9d360716b774163960be2f81ecf076e5d82875a739",
+      "char": 5463,
+      "fonte": "C:\\Users\\Anton\\Desktop\\resh\\vault_organizer\\vault_copia\\filosofi\\temi\\Misteri\\Simboli_logici.md",
+      "aspettative": {
+        "trilemma": "nessun corno USE",
+        "inclosura": "assente",
+        "eps": "medio-alto"
+      }
+    },
+    {
+      "id": "S7",
+      "file": "S7_narrativo_petit_prince.md",
+      "sha256": "6954c9e96f444a53fd9de7c458b07be368f2ec3557c05abdd1478f80e1cd8b52",
+      "char": 2344,
+      "fonte": "C:\\Users\\Anton\\Desktop\\resh\\vault_organizer\\vault_copia\\filosofi\\temi\\Misteri\\Petit Prince de Saint-Exupéry — L'astronome.md",
+      "aspettative": {
+        "nota": "controllo: narrativa, niente patologie gonfiate"
+      }
+    }
+  ]
+}

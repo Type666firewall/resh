@@ -1,0 +1,116 @@
+{
+  "esiti": {
+    "S1": {
+      "runs": [
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "presente",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento di accesso a una realtà oggettiva e u",
+          "errori": []
+        },
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "presente",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento di accesso a una realtà oggettiva e u",
+          "errori": []
+        },
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "parziale",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento di descrizione oggettiva e univoca de",
+          "errori": []
+        }
+      ],
+      "stabile": {
+        "corno": true,
+        "modo_tri": true,
+        "forma": false,
+        "modo_incl": true
+      }
+    },
+    "S2": {
+      "runs": [
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "presente",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento in grado di descrivere la realtà ogge",
+          "errori": []
+        },
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "presente",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento in grado di descrivere la realtà ogge",
+          "errori": []
+        },
+        {
+          "corno": "C3",
+          "modo_tri": "USE",
+          "forma": "presente",
+          "modo_incl": "USE",
+          "o_dichiarato": "Definire la scienza come l'unico strumento di accesso a una realtà oggettiva e u",
+          "errori": []
+        }
+      ],
+      "stabile": {
+        "corno": true,
+        "modo_tri": true,
+        "forma": true,
+        "modo_incl": true
+      }
+    },
+    "S3": {
+      "runs": [
+        {
+          "corno": "C2",
+          "modo_tri": "SELF_DIAGNOSIS",
+          "forma": "presente",
+          "modo_incl": "SELF_DIAGNOSIS",
+          "o_dichiarato": "Tracciare i limiti del pensiero e sostenere la necessità che la logica integri l",
+          "errori": []
+        },
+        {
+          "corno": "C2",
+          "modo_tri": "SELF_DIAGNOSIS",
+          "forma": "presente",
+          "modo_incl": "SELF_DIAGNOSIS",
+          "o_dichiarato": "Tracciare i limiti del pensiero e sostenere la necessità di una logica capace di",
+          "errori": []
+        },
+        {
+          "corno": "C2",
+          "modo_tri": "SELF_DIAGNOSIS",
+          "forma": "presente",
+          "modo_incl": "SELF_DIAGNOSIS",
+          "o_dichiarato": "Tracciare i limiti del pensiero e sostenere la necessità che la logica integri l",
+          "errori": []
+        }
+      ],
+      "stabile": {
+        "corno": true,
+        "modo_tri": true,
+        "forma": true,
+        "modo_incl": true
+      }
+    }
+  },
+  "stab_corno": 3,
+  "stab_forma": 2,
+  "falle": [
+    {
+      "id": "F1-S1-forma",
+      "evidenza": "forma=['presente', 'presente', 'parziale']"
+    }
+  ],
+  "gate": true,
+  "_ts": "2026-06-13T19:43:24"
+}

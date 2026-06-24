@@ -1,0 +1,24 @@
+# resh/ requirements — stack di riferimento (venv llama.cpp, verificato 2026-06-11).
+# Le versioni minime sotto sono QUELLE TESTATE: ε è riproducibile solo a parità
+# di stack (il rapporto ora registra le versioni in backend.ambiente).
+#   .venv/Scripts/python.exe -m pip install -r resh/requirements.txt
+#
+# Senza queste, il package degrada gracefully (e il rapporto lo dichiara con
+# backend.eps_degradato=True):
+#   - annotazione → fallback regex (POS euristica)
+#   - encoder     → fallback hash bag-of-words
+#   - _nli        → fallback uniforme (zero detection NLI)
+#
+# Setup primo avvio (manuale, dopo install stanza):
+#   python -c "import stanza; stanza.download('it', processors='tokenize,mwt,pos,lemma,depparse,ner')"
+
+stanza>=1.12.2
+sentence-transformers>=5.4.1
+transformers>=5.8.0
+torch>=2.11.0               # CVE-2025-32434: torch.load safe richiede 2.6+; testato 2.11+cu128
+scikit-learn>=1.9.0         # trascinata da bertopic 2026-06-11; ε verificata invariata
+numpy>=2.2.6
+bertopic>=0.17.4            # drift tematico in coerenza.py (installato nel venv 2026-06-11)
+
+# simpful RIMOSSO (ADR-005 2026-06-12): fuzzy_logic.py in trash, fascia densità
+# a soglie fisse in core (stesso output del fallback lineare che girava da sempre).
