@@ -96,6 +96,9 @@ resh-google mio_testo.md                CLOUD:  Google AI Studio, gemma-4-31b (~
 resh documento paper.md --completo      paper intero (LLM, riprende se interrotto)
 resh runs                               elenco dei run salvati
 resh report-doc Ψ_xxx_D001 --out r.md   rigenera un report dal database (0 call)
+resh curate                             revisione manuale run per dataset calibrazione RF
+resh curate --stats                     conteggi approvati/scartati/pending
+resh curate --export                    esporta CSV piatto dai run approvati
 resh modelli                            modelli LM Studio: scaricati e quali in memoria
 ```
 
@@ -174,9 +177,11 @@ resh/
 ├── report.py                formatter deterministico (report firmati)
 ├── cache.py chunking.py chunking_documento.py pulizia_input.py
 ├── schemas.py cli.py · persistenza in db/
+├── curate_dataset.py        curazione manuale run + export dataset RF (offline, non in Λ)
 │
 │  DATI
 ├── lessici/                 lessici curati (marker Trilemma, termini astratti…)
+├── data/                    output curazione (curated_labels.jsonl, dataset_rf.csv)
 ├── Trilemma dataset/        234 gold annotati (SCHEMA v1.2, REPORT v7.1)
 ├── Abstract dataset/        gold termini astratti (SCHEMA v0.1)
 ├── tests/                   batterie non-regressione + eval + report d'esempio
@@ -211,6 +216,8 @@ Per il lato induttivo: chiave API nei profili di `config.py`
 **Fix 2026-06-16 — budget estrazione O**: `documento._estrai_O()` e `obiettivo._o_via_llm_json()` avevano `max_tokens=1500` fisso. I modelli thinking (gemma-4-31b) esaurivano il budget nel blocco `<thought>` prima del JSON → `ValueError`. Fix: `max_tokens=8192` (allineato a `_call_asse()`). Verificato su Provaresh.txt: O corretto, 56 call, ε_doc=0.4489.
 
 **Aperto — frontmatter vault**: `compatta_chunk()` non rimuove il frontmatter YAML del Bibliotecario. Se il file proviene dal vault, O viene estratto dal frontmatter invece che dal corpo del testo. Soluzione proposta (`separa_frontmatter()` in `pulizia_input.py` + Λ) da approvare.
+
+**Aperto — dataset calibrazione RF**: `curate_dataset.py` raccoglie le decisioni manuali (approvato/scartato) sui run con induttivo. Obiettivo futuro: foresta casuale che mappa profilo linguistico → soglie deterministiche, usando il verdetto induttivo come supervisore (l'induttivo non modula ε, modula i *parametri* del deterministico). La pipeline per-testo ora salva nel DB, così i run con `--induttivo` entrano nel pool di curazione con profilo completo.
 
 **Attivo ma non ancora misurato:** Inclosura di Priest — il detector di forma
 (`pre_detect_inclosura` + call LLM + `_postprocess_inclosura`) gira end-to-end in
