@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 from .core import analizza
-from .persistenza import report_markdown, save_report_markdown
+from .persistenza import report_markdown, save_report_markdown, save_run
 
 
 def _build_markdown(rapporto, nome_documento: str) -> str:
@@ -99,10 +99,17 @@ def _build_markdown(rapporto, nome_documento: str) -> str:
         md.append(rapporto.sintesi_narrativa)
         md.append("")
 
-    if getattr(rapporto, "induttivo", None):
+    ind = getattr(rapporto, "induttivo", None)
+    ind_richiesto = getattr(rapporto, "induttivo_richiesto", False)
+    if ind_richiesto and (ind is None or "errore" in (ind or {})):
+        md.append("## ⚠ Lato induttivo — RICHIESTO MA NON DISPONIBILE")
+        errore = (ind or {}).get("errore", "nessun output prodotto")
+        md.append(f"> Il lato induttivo (LLM) è stato richiesto ma non ha prodotto output: {errore}")
+        md.append("")
+    elif ind:
         from .report import _render_ind
         md.append("## Lato induttivo (arsenale ऋ — giudizi a parità di ruolo)")
-        md.extend(_render_ind(rapporto.induttivo))
+        md.extend(_render_ind(ind))
         md.append("")
 
     if getattr(rapporto, "quadro_epsilon", None):
@@ -309,11 +316,17 @@ def _obiettivo_main(argv: list[str]) -> int:
     return 0
 
 
+def _curate_main(argv: list[str]) -> int:
+    from .curate_dataset import main as curate_main
+    return curate_main(argv)
+
+
 _SUBCOMMANDS = {
     "documento":  _documento_main,
     "obiettivo":  _obiettivo_main,
     "runs":       _runs_main,
     "report-doc": _report_doc_main,
+    "curate":     _curate_main,
 }
 
 
@@ -360,6 +373,11 @@ def main(argv: list[str] | None = None) -> int:
         nome_doc = "TESTO_TEST"
 
     rapporto = analizza(testo, induttivo_llm=args.induttivo, verbose=not args.quiet)
+
+    if args.file:
+        esito = save_run(rapporto, file_path=p)
+        if not args.quiet:
+            print(f"[DB] salvato: {esito['run_uid']}")
 
     md = _build_markdown(rapporto, nome_doc)
     if not args.quiet:
