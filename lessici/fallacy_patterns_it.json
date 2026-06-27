@@ -28,7 +28,7 @@
     },
     {
       "tipo": "false_dilemma",
-      "regex": "\\b(o\\s+\\S+\\s+o\\s+\\S+|delle\\s+due\\s+l'una|non\\s+c'è\\s+altra\\s+via|l'unica\\s+alternativa|o\\s+si\\s+è\\s+\\S+\\s+o\\s+si\\s+è)\\b",
+      "regex": "\\b(o\\s+(?!è\\s+o\\b|non\\s+o\\b|vera\\b|falsa\\b)\\S+\\s+o\\s+\\S+|delle\\s+due\\s+l'una|non\\s+c'è\\s+altra\\s+via|l'unica\\s+alternativa|o\\s+si\\s+è\\s+\\S+\\s+o\\s+si\\s+è)\\b",
       "severita": 0.55,
       "confidence": 0.5
     },

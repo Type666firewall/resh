@@ -216,18 +216,21 @@ def _log_dataset(asse: str, system: str, user: str, out) -> None:
 # Una singola call d'asse.
 # ─────────────────────────────────────────────────────────────────────────────
 def _call_asse(asse: str, system: str, user: str, *, profile: Optional[str] = None,
-              max_tokens: Optional[int] = None) -> dict:
+              max_tokens: Optional[int] = None,
+              fallback_profile: Optional[str] = None) -> dict:
     """Esegue un asse. Ritorna il JSON dell'LLM, o `{"errore": ...}` (isolato).
 
     `max_tokens` adattivo alla lunghezza dell'input se non specificato: testi lunghi
     generano più rilievi → servono più token in output (i thinking model consumano
     anche budget di ragionamento). Limiti: [3072, 8192].
+    `fallback_profile`: se specificato, tentato una volta se il profilo primario fallisce.
     """
     if max_tokens is None:
         max_tokens = min(8192, max(3072, len(user) // 5))
     try:
         out = config.call_llm_json(system, user, max_tokens=max_tokens,
-                                   temperature=0.2, profile=profile, tag=f"ऋ-{asse}")
+                                   temperature=0.2, profile=profile, tag=f"ऋ-{asse}",
+                                   fallback_profile=fallback_profile)
         _log_dataset(asse, system, user, out)
         return out
     except Exception as exc:
@@ -603,6 +606,7 @@ class RapportoInduttivo:
     sintesi:    Optional[str] = None
     profilo:    str = ""
     meta:       dict = field(default_factory=dict)
+    assi_falliti: list = field(default_factory=list)  # id assi che hanno restituito {"errore": ...}
 
     def as_dict(self) -> dict:
         return {
@@ -620,6 +624,7 @@ class RapportoInduttivo:
             "sintesi": self.sintesi,
             "profilo": self.profilo,
             "meta": self.meta,
+            "assi_falliti": self.assi_falliti,
         }
 
 
@@ -634,6 +639,7 @@ def analizza_induttivo(
     estrai_o: bool = True,
     sintesi: bool = False,
     profile: Optional[str] = None,
+    fallback_profile: Optional[str] = None,
     assi: Optional[list[str]] = None,
     rapporto_resh=None,
 ) -> RapportoInduttivo:
@@ -667,7 +673,8 @@ def analizza_induttivo(
     if "arsenale" in (assi or ["arsenale"]) or assi is None:
         sys_ars = _corpo(prompts, "Arsenale Critico")
         usr_ars = _payload(testo, O, _OUT_ARSENALE, C=controargomento)
-        arsenale_out = _call_asse("arsenale", sys_ars, usr_ars, profile=profile)
+        arsenale_out = _call_asse("arsenale", sys_ars, usr_ars, profile=profile,
+                                  fallback_profile=fallback_profile)
 
     # 3-5. Assi ऋ (generici). Eseguiti in sequenza (rispetta RPM; isolati su errore).
     assi_out: dict = {}
@@ -677,7 +684,8 @@ def analizza_induttivo(
         prefix = dict(_ASSI)[gid]
         sys_a = _corpo(prompts, prefix)
         usr_a = _payload(testo, O, _OUT_GENERICO)
-        assi_out[gid] = _call_asse(gid, sys_a, usr_a, profile=profile)
+        assi_out[gid] = _call_asse(gid, sys_a, usr_a, profile=profile,
+                                   fallback_profile=fallback_profile)
 
     # 6. Trilemma — riceve Arsenale + ℜ¹ + pre-detection deterministica.
     trilemma_out: dict = {}
@@ -699,7 +707,8 @@ def analizza_induttivo(
             feed.append(pre_ctx)
         usr_tri = _payload(testo, O, _OUT_TRILEMMA, C=controargomento,
                           extra="\n\n".join(feed))
-        llm_tri = _call_asse("trilemma", sys_tri, usr_tri, profile=profile)
+        llm_tri = _call_asse("trilemma", sys_tri, usr_tri, profile=profile,
+                             fallback_profile=fallback_profile)
 
         # 6b. Confronto det/ind.
         confronto = _confronta_trilemma(pre_hits, llm_tri)
@@ -724,8 +733,20 @@ def analizza_induttivo(
             feed_i.append(pre_ctx_i)
         usr_incl = _payload(testo, O, _OUT_INCLOSURA, C=controargomento,
                             extra="\n\n".join(feed_i))
-        llm_incl = _call_asse("inclosura", sys_incl, usr_incl, profile=profile)
+        llm_incl = _call_asse("inclosura", sys_incl, usr_incl, profile=profile,
+                              fallback_profile=fallback_profile)
         inclosura_out = _postprocess_inclosura(llm_incl, incl_hits)
+
+    _assi_falliti = []
+    if "errore" in arsenale_out:
+        _assi_falliti.append("arsenale")
+    for _gid, _out in assi_out.items():
+        if isinstance(_out, dict) and "errore" in _out:
+            _assi_falliti.append(_gid)
+    if trilemma_out and "errore" in trilemma_out.get("llm", {}):
+        _assi_falliti.append("trilemma")
+    if inclosura_out and "errore" in inclosura_out.get("llm", {}):
+        _assi_falliti.append("inclosura")
 
     rap = RapportoInduttivo(
         obiettivo=O,
@@ -738,6 +759,7 @@ def analizza_induttivo(
         meta={"model": snap.get("model"),
               "n_call": (1 if arsenale_out else 0) + len(assi_out)
                         + (1 if trilemma_out else 0) + (1 if inclosura_out else 0)},
+        assi_falliti=_assi_falliti,
     )
 
     # 7. Δε — sintesi finale opzionale (integra i rilievi; non produce numeri).

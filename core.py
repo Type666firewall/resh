@@ -256,14 +256,25 @@ async def analizza_async(
     obiettivo_fonte = "deterministica"
     if obiettivo_llm or os.getenv("P3_RESH_O_LLM") == "1":
         if verbose: print("  [3/4] Estrazione Obiettivo O (LLM, opzionale)...")
+        _o_ok = False
         try:
-            _estrai_o = resolve(G.ESTRAI_OBIETTIVO)    # lazy: LLM-side opzionale
-            o_ind = await _run_in_thread(_estrai_o, testo)
-            if o_ind is not None:
-                teleologia = o_ind
-                obiettivo_fonte = "llm"
+            _estrai_o = resolve(G.ESTRAI_OBIETTIVO)
         except Exception as exc:
-            print(f"[resh.core] O-extraction LLM fallita (graceful): {exc}")
+            _estrai_o = None
+            print(f"[resh.core] resolve ESTRAI_OBIETTIVO fallito (graceful): {exc}")
+        if _estrai_o is not None:
+            for _o_attempt in range(2):
+                try:
+                    o_ind = await _run_in_thread(_estrai_o, testo)
+                    if o_ind is not None:
+                        teleologia = o_ind
+                        obiettivo_fonte = "llm"
+                    _o_ok = True
+                    break
+                except Exception as exc:
+                    print(f"[resh.core] O-extraction tentativo {_o_attempt+1} fallito: {exc}")
+        if not _o_ok:
+            print("[resh.core] O-extraction LLM fallita (graceful): uso deterministico")
 
     # Incoerenza INTRINSECA di O (O fallibile rappresentazione del volere): misura
     # deterministica della relazione dichiarato↔latente. `None` con O deterministico
@@ -446,6 +457,7 @@ async def analizza_async(
     # (rapporto.induttivo), non tocca eps_resh. La pre-detection Trilemma
     # riceve il rapporto det (segnali strutturali NON_SEQUITUR/petitio).
     if induttivo_llm or os.getenv("P3_RESH_INDUTTIVO") == "1":
+        rapporto.induttivo_richiesto = True
         if verbose: print("  [4/4] Arsenale induttivo (LLM, opzionale)...")
         try:
             _analizza_ind = resolve(G.ANALIZZA_INDUTTIVO)   # lazy: LLM-side
@@ -614,6 +626,15 @@ def _stampa_rapporto(r: RapportoResh):
     if r.sintesi_narrativa:
         print(f"\n▸ SINTESI NARRATIVA (LLM)")
         print(f"  {r.sintesi_narrativa}")
+
+    ind = r.induttivo
+    if ind is None:
+        print("\n▸ LLM INDUTTIVO: non richiesto")
+    elif "errore" in ind:
+        print(f"\n▸ LLM INDUTTIVO: FALLITO — {ind['errore']}")
+    else:
+        n_giudizi = len(ind.get("giudizi_parita", []))
+        print(f"\n▸ LLM INDUTTIVO: ok — {n_giudizi} giudizi a parità")
 
     print(sep)
 

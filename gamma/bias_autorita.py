@@ -60,7 +60,8 @@ def _persone_da_doc(doc: AnnotatedDoc) -> list[str]:
     """Estrae nomi propri di persona — Stanza NER se disponibile, altrimenti
     cattura sequenze di token capitalizzati (euristica conservativa)."""
     if doc.entities:
-        return [e.text for e in doc.entities if e.type in {"PER", "PERSON"}]
+        return [e.text for e in doc.entities
+                if e.type in {"PER", "PERSON"} and e.text.replace(" ", "").isalpha()]
     # fallback: token consecutivi capitalizzati
     persone = []
     for s in doc.sentences:

@@ -87,6 +87,7 @@ class Profile:
     reasoning: Optional[str] = None
     context: int = 0       # finestra di contesto indicativa (0 = ignota)
     rpm: int = 0           # limite richieste/min (0 = nessun throttle, es. locale)
+    timeout: float = 120   # secondi per request; locale alto (inferenza lenta), cloud basso
     note: str = ""
 
 
@@ -145,14 +146,14 @@ PROFILES = {
     #   - qwen3.6-35b   Q4_K_M (22.1 GB) → MoE 35B-A3B: solo offload PARZIALE (3B attivi);
     #                                       usabile ma lento, tenere n_gpu_layers gestito da LM Studio.
     "local":       Profile("local", "local", ENDPOINTS["lmstudio"], "auto",
-                           max_tokens=4096, temperature=0.2, context=8192,
+                           max_tokens=4096, temperature=0.2, context=8192, timeout=600,
                            note="LM Studio — modello caricato (auto-detect); su 4060 preferire gemma-4 7.5B/4.6B"),
     "local-embed": Profile("local-embed", "local", ENDPOINTS["lmstudio"], "auto",
-                           max_tokens=0, context=8192,
+                           max_tokens=0, context=8192, timeout=600,
                            note="LM Studio — endpoint /v1/embeddings del modello embedding caricato"),
     # llama.cpp server (./server -c ...), porta 8080 di default.
     "llamacpp":    Profile("llamacpp", "local", ENDPOINTS["llamacpp"], "auto",
-                           max_tokens=4096, context=8192,
+                           max_tokens=4096, context=8192, timeout=600,
                            note="llama.cpp server locale"),
 
     # ── Provider a pagamento (attivi quando la chiave è presente) ─────────────
@@ -218,6 +219,30 @@ def lmstudio_models(base_url: Optional[str] = None) -> list[str]:
         return [m.get("id", "") for m in data.get("data", []) if m.get("id")]
     except Exception:
         return []
+
+
+def _lmstudio_model_loaded(base_url: str, model: str) -> bool:
+    """`True` se il modello è `state: loaded` su `/api/v0/models` di LM Studio.
+
+    `/v1/models` elenca i modelli SCARICATI; `/api/v0/models` riporta lo stato reale.
+    Se l'endpoint non risponde (versione vecchia di LM Studio) ritorna True (skip).
+    """
+    import urllib.request
+    import json
+    # Deriva il base dell'API rimuovendo il suffisso OpenAI-compat (/v1).
+    api_base = base_url.rstrip("/")
+    if api_base.endswith("/v1"):
+        api_base = api_base[:-3]
+    url = api_base + "/api/v0/models"
+    try:
+        with urllib.request.urlopen(url, timeout=4) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        for entry in data if isinstance(data, list) else []:
+            if entry.get("id") == model or entry.get("path", "").endswith(model):
+                return entry.get("state") == "loaded"
+        return True   # modello non in lista → assume ok (potrebbe essere caricato on-demand)
+    except Exception:
+        return True   # endpoint non disponibile → skip del check
 
 
 def _resolve_model(p: Profile) -> str:
@@ -349,6 +374,12 @@ def _complete(p: Profile, system: str, user: str,
     """
     client = _client_cached(p.base_url, _api_key(p.provider))
     model = _resolve_model(p)
+    # BUG-6: per provider locale verifica che il modello sia effettivamente loaded.
+    if p.provider == "local" and not _lmstudio_model_loaded(p.base_url, model):
+        raise RuntimeError(
+            f"LM Studio: il modello '{model}' non è loaded (state != loaded). "
+            "Caricarlo manualmente in LM Studio prima di avviare la call."
+        )
     kwargs = {
         "model": model,
         "messages": [{"role": "system", "content": system},
@@ -358,8 +389,9 @@ def _complete(p: Profile, system: str, user: str,
     }
     if _supports_reasoning_param(p):
         kwargs["reasoning_effort"] = p.reasoning
+    req_timeout = float(os.getenv("P3_LLM_TIMEOUT", "0")) or p.timeout
     _throttle(model, p.rpm)
-    resp = client.chat.completions.create(**kwargs)
+    resp = client.chat.completions.create(**kwargs, timeout=req_timeout)
     choice = resp.choices[0]
     raw = choice.message.content or ""
     usage = {}
@@ -407,7 +439,8 @@ _JSON_RETRY_HINT = (
 
 def call_llm_json(system: str, user: str, *, max_tokens: Optional[int] = None,
                   temperature: Optional[float] = None, profile: Optional[str] = None,
-                  tag: str = "", retries: int = 1) -> dict:
+                  tag: str = "", retries: int = 1,
+                  fallback_profile: Optional[str] = None) -> dict:
     """Chiamata che ritorna un dict JSON (sanitize + parsing tollerante).
 
     Firma compatibile col `llm_json.call_llm_json` canonico di P3 (O-18.1).
@@ -419,6 +452,10 @@ def call_llm_json(system: str, user: str, *, max_tokens: Optional[int] = None,
     - *trace veritiera*: OGNI tentativo è tracciato; un parse fallito riceve flag
       `bad_json` (non più un falso `ok`), perché la trace ora registra DOPO il
       `json.loads`, non prima.
+
+    **fallback_profile**: se specificato e il profilo primario esaurisce tutti i retry,
+    viene effettuato un ultimo tentativo con questo profilo alternativo (tracciato con
+    tag suffisso `-fb`). Usato per resilienza su endpoint singolo (es. inclosura).
     """
     p = get_profile(profile)
     from . import trace
@@ -455,5 +492,25 @@ def call_llm_json(system: str, user: str, *, max_tokens: Optional[int] = None,
                      finish_reason=meta["finish_reason"], usage=meta["usage"],
                      latency_ms=latency, parse_ok=True)
         return data
+
+    if fallback_profile:
+        # Ultimo tentativo con profilo alternativo — tracciato separatamente.
+        fb = get_profile(fallback_profile)
+        fb_model = _resolve_model(fb)
+        t0 = time.perf_counter()
+        try:
+            meta = _complete(fb, system, user, max_tokens, temperature)
+            latency = int((time.perf_counter() - t0) * 1000)
+            data = _extract_json(meta["sanitized"])
+            trace.record(tag=f"{tag}-fb", profile=fb.name, model=meta["model"],
+                         system=system, user=user, raw=meta["raw"],
+                         sanitized=meta["sanitized"], finish_reason=meta["finish_reason"],
+                         usage=meta["usage"], latency_ms=latency, parse_ok=True)
+            return data
+        except Exception as fb_exc:
+            latency = int((time.perf_counter() - t0) * 1000)
+            trace.record(tag=f"{tag}-fb", profile=fb.name, model=fb_model,
+                         system=system, user=user, latency_ms=latency, errore=str(fb_exc))
+            last_exc = fb_exc
 
     raise last_exc if last_exc else ValueError("call_llm_json: nessun tentativo riuscito")

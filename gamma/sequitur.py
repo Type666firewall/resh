@@ -111,6 +111,8 @@ def verifica_sequitur(
         tesi = (arg.tesi_supportata or "").strip()
         if not tesi or tesi == (arg.testo or "").strip():
             continue   # tesi assente o coincidente con la premessa → skip
+        if len((arg.testo or "").split()) < 5:
+            continue   # frammento troppo corto: NLI senza contesto → falso positivo
         contesto = _contesto_premesse(arg)
         if not contesto:
             continue

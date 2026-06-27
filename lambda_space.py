@@ -1,4 +1,4 @@
-"""resh/lambda_space.py — Λ_ऋ, spazio logico dell'agente Σ-8 ऋ.
+"""resh/lambda_space.py — Λ_ऋ, spazio logico dell'agente Σ-9 ऋ.
 
 Registra ogni metodo γ invocabile dall'agente come `Gamma` immutabile.
 Conforme a CLAUDE.md [#LAMBDA]:

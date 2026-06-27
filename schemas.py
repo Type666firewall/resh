@@ -138,6 +138,7 @@ class RapportoResh:
     # (quest'ultimo SEMPRE calcolato: con induttivo OFF è il quadro det-only).
     induttivo:             Optional[dict]  = None
     quadro_epsilon:        Optional[dict]  = None
+    induttivo_richiesto:   bool            = False  # True se induttivo_llm=True o env P3_RESH_INDUTTIVO=1
 
 
 # ─── Trilemma pre-detection ─────────────────────────────────────────────────
