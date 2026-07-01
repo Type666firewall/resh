@@ -12,3 +12,7 @@ data/
 _keys_local.py
 *.csv
 *apiKey*
+
+# Testi sorgente per i report di esempio: restano locali (diritti dei
+# traduttori/autori) — nel repo vanno solo i report, che citano e rinviano.
+examples/fonti/
