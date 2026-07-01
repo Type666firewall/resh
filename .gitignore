@@ -7,3 +7,8 @@ __pycache__/
 venv/
 *.db
 data/
+
+# Credenziali locali — MAI versionare
+_keys_local.py
+*.csv
+*apiKey*
