@@ -6,9 +6,9 @@ TUTTA la genesi, TUTTE le patologie, TUTTI i rilievi di ogni asse, Trilemma +
 confronto det/ind, Inclosura, termini astratti, e — quotata com'è — la sintesi
 Δε del SISTEMA. Stampa in testa provenienza+scope (fonte, lingua, n caratteri).
 
-Confine resh↔gateway (Σ_w): questo NON è «il report con voce» (quello è gateway,
-futuro). È il grezzo reso leggibile — input del gateway domani, ispezione oggi.
-Nessuna frase è aggiunta dal formatter: se non è nei dati, non compare.
+Questo NON è "il report con voce" (una sintesi narrativa/editoriale è fuori
+scope per questo modulo). È il grezzo reso leggibile, pensato per l'ispezione
+diretta. Nessuna frase è aggiunta dal formatter: se non è nei dati, non compare.
 
 Firma dict-based (stessa forma di tests/_report_output.json), così è invocabile
 sia dagli oggetti (`.as_dict()`/serializzazione) sia dal JSON salvato.

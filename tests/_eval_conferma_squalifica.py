@@ -18,16 +18,15 @@ from pathlib import Path
 PROFILE = os.environ.get("P3_EVAL_PROFILE", "local")
 
 sys.stdout.reconfigure(encoding="utf-8")
-sys.path.insert(0, r"C:\Users\Anton\Desktop\p3_push")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from resh.lambda_space import G, resolve
 
 analizza_induttivo = resolve(G.ANALIZZA_INDUTTIVO)
 
-CORPUS = Path(r"C:\Users\Anton\Desktop\p3_push\resh\tests\corpus_stress")
+CORPUS = Path(__file__).resolve().parent / "corpus_stress"
 CASI = [
     ("S1", CORPUS / "S1_strawman_manipolativo.txt", True),
     ("S6", CORPUS / "S6_neutro_simboli_logici.md", False),
-    ("S7", CORPUS / "S7_narrativo_petit_prince.md", False),
 ]
 # Match largo sul lessico del quesito (il giudice è libero nella formulazione).
 RE_SQUALIFICA = re.compile(

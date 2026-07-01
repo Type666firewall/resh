@@ -38,7 +38,7 @@ from enum import Enum
 from functools import lru_cache
 from typing import Callable, Optional
 
-from gamma_types import GammaPort
+from .gamma_types import GammaPort
 
 
 # ─── tassonomia γ ─────────────────────────────────────────────────────
@@ -484,8 +484,8 @@ LAMBDA_RESH: frozenset[Gamma] = frozenset({
         ),
     ),
 
-    # γ_sintesi_llm RIMOSSO (ADR-005): residuo dell'agente pre-rifondazione;
-    # la voce narrativa spetta al Gateway (Σ-7). legacy_llm.py in trash/.
+    # γ_sintesi_llm RIMOSSO: residuo pre-rifondazione; una sintesi narrativa
+    # con voce editoriale è fuori scope per questo modulo (resta il grezzo).
 
     # ─── Obiettivo O (induttivo, opzionale) ──────────────────────────
     Gamma(
@@ -668,7 +668,7 @@ LAMBDA_RESH: frozenset[Gamma] = frozenset({
         output_kind="giudizio",
     ),
 
-    # ─── Reporting (rendering deterministico del grezzo, confine col gateway) ─
+    # ─── Reporting (rendering deterministico del grezzo) ──────────────────
     Gamma(
         name="γ_report",
         area=GammaArea.ORCHESTRA,
@@ -678,7 +678,7 @@ LAMBDA_RESH: frozenset[Gamma] = frozenset({
         llm_required=False,
         descrizione="Rende il grezzo (det+ind+astratti) in markdown leggibile. ZERO giudizio/"
                     "selezione: stampa provenienza+scope, tutti i componenti/rilievi, e la Δε del "
-                    "sistema verbatim. NON è il report-con-voce (= gateway): è il grezzo leggibile.",
+                    "sistema verbatim. Non produce una sintesi narrativa con voce editoriale.",
         input_ports=(
             GammaPort("rapporto", "RapportoResh", "rapporto completo da γ_analizza_async"),
         ),

@@ -2,9 +2,9 @@
 
 Bozza v0.1 — copre SOLO il lato regex deterministico (fallacy_patterns_en.json),
 zero LLM/NLI/Stanza: gira ovunque, anche senza lo stack pesante. Non sostituisce
-un eval reale con gold annotato da Antonio (quello resta un passo successivo,
-come da decreto resh sui gold set) — qui si verifica solo che i pattern EN
-sparino sui casi per cui sono stati scritti, non che siano calibrati.
+un eval reale con gold set annotato (quello resta un passo successivo) — qui si
+verifica solo che i pattern EN sparino sui casi per cui sono stati scritti, non
+che siano calibrati.
 
 Uso: python -m resh.tests.test_english_fallacie_regex  (exit 1 se regressione)
 """

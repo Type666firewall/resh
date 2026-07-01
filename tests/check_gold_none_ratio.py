@@ -4,7 +4,7 @@ SCHEMA.md §6 impone un minimo di 30% record `corno=NONE` per gold set, come
 anti-bias (evita che il detector si tari solo su testi "positivi"). Nessun
 controllo automatico la applicava finora: questo script SEGNALA soltanto le
 violazioni, non tocca i JSONL — rietichettare un gold set è una decisione di
-Antonio (resh/CLAUDE.md: "vocabolari dei dataset gold" non è delega Claude).
+merito sul contenuto del dataset, non un'operazione da automatizzare qui.
 
 Uso: python -m resh.tests.check_gold_none_ratio [--soglia 0.30]
 """
