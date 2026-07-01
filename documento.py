@@ -21,9 +21,12 @@ import asyncio
 import datetime
 import hashlib
 import json
+import logging
 import math
 from dataclasses import dataclass, field
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from . import config, obiettivo                  # hub LLM + DATI (SYS_OBIETTIVO: prompt=dato)
 from .cache import CACHE_DIR as _CACHE           # costante
@@ -204,7 +207,9 @@ def analizza_documento_induttivo(
 
     riparati: list[int] = []
 
-    for ch in chunks:
+    n_chunk = len(chunks)
+    logger.info("analizza_documento_induttivo: avvio map su %d chunk (doc_hash=%s)", n_chunk, dh)
+    for _idx, ch in enumerate(chunks, start=1):
         cache_f = cdir / f"chunk_{ch.id}.json"
         if resume and cache_f.exists():
             rec = json.loads(cache_f.read_text(encoding="utf-8"))
@@ -213,7 +218,9 @@ def analizza_documento_induttivo(
                 # riparazione mirata: ri-esegue SOLO le parti in errore (429 ecc.)
                 if max_call_budget is not None and call_count + len(falliti) > max_call_budget:
                     saltati.append(ch.id)
+                    logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
                     continue
+                logger.info("chunk %d/%d (id=%s): riparazione mirata (%s)", _idx, n_chunk, ch.id, ",".join(falliti))
                 fix = _analizza_induttivo(
                     _clean(ch.testo), obiettivo=_teleologia(O), assi=falliti,
                     sintesi=False, profile=profile).as_dict()
@@ -236,14 +243,18 @@ def analizza_documento_induttivo(
                                   "eps": (rec.get("det") or {}).get("eps_resh"),
                                   "char": len(ch.testo)})
             note_chunk.append(rec.get("nota_sintesi", ""))
+            if not falliti:
+                logger.info("chunk %d/%d (id=%s): da cache (resume)", _idx, n_chunk, ch.id)
             continue
 
         # budget: se il prossimo chunk sforerebbe il tetto, salta (resumabile)
         costo = (14 if arsenale_completo else len(assi_chunk)) + (1 if con_astratti else 0)
         if max_call_budget is not None and call_count + costo > max_call_budget:
             saltati.append(ch.id)
+            logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
             continue
 
+        logger.info("chunk %d/%d (id=%s): analisi (~%d call)", _idx, n_chunk, ch.id, costo)
         testo_c = _clean(ch.testo)
         det_out = None
         if det:
@@ -274,6 +285,8 @@ def analizza_documento_induttivo(
                               "eps": (det_out or {}).get("eps_resh"), "char": len(ch.testo)})
         note_chunk.append(nota_sintesi)
 
+    logger.info("analizza_documento_induttivo: fine map — %d call, %d riparati, %d saltati",
+                call_count, len(riparati), len(saltati))
     eps_doc = _aggrega_epsilon(eps_per_chunk)
     sintesi_doc = _sintesi_finale(O, note_chunk, profile) if note_chunk else ""
 

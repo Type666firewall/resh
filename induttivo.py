@@ -36,6 +36,7 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
+import logging
 import os
 import re
 from dataclasses import dataclass, field
@@ -191,6 +192,8 @@ def _payload(testo: str, O: Optional[Teleologia], out_instr: str, *,
 from .cache import CACHE_DIR as _CACHE_DIR
 
 _DATASET_PATH = _CACHE_DIR / "induttivo_dataset.jsonl"
+_logger = logging.getLogger(__name__)
+_dataset_write_failed_warned = False
 
 
 def _log_dataset(asse: str, system: str, user: str, out) -> None:
@@ -208,8 +211,14 @@ def _log_dataset(asse: str, system: str, user: str, out) -> None:
         }
         with _DATASET_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    except OSError:
-        pass
+    except OSError as exc:
+        global _dataset_write_failed_warned
+        if not _dataset_write_failed_warned:
+            _dataset_write_failed_warned = True
+            _logger.warning(
+                "induttivo_dataset.jsonl (%s) non scrivibile: %s — dataset RF di "
+                "questo processo resterà incompleto da qui in avanti (avviso una tantum)",
+                _DATASET_PATH, exc)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

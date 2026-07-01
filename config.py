@@ -32,7 +32,7 @@ import json
 import os
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from typing import Optional
 
@@ -196,8 +196,7 @@ def get_profile(profile: Optional[str] = None) -> Profile:
     model = os.getenv("P3_LLM_MODEL", p.model)
     if base_url == p.base_url and model == p.model:
         return p
-    return Profile(p.name, p.provider, base_url, model, p.max_tokens,
-                   p.temperature, p.reasoning, p.context, p.rpm, p.note)
+    return replace(p, base_url=base_url, model=model)
 
 
 def _api_key(provider: str) -> str:
@@ -330,13 +329,42 @@ def _fix_json_escapes(s: str) -> str:
     return _re.sub(r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r'\\\\', s)
 
 
+def _balanced_json_slice(s: str) -> Optional[str]:
+    """Isola il primo `{…}` bilanciato (rispettando le stringhe), non "primo apre /
+    ultimo chiude" — quest'ultimo si rompe se il modello aggiunge testo di coda con
+    una `}` residua dopo un JSON già valido."""
+    i = s.find("{")
+    if i < 0:
+        return None
+    depth, in_str, esc = 0, False, False
+    for k in range(i, len(s)):
+        ch = s[k]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return s[i : k + 1]
+    return None
+
+
 def _extract_json(text: str) -> dict:
-    """Parsing JSON tollerante: diretto → escape sanate → isolando il primo `{…}`."""
+    """Parsing JSON tollerante: diretto → escape sanate → isolando il primo `{…}` bilanciato."""
     s = _sanitize(text)
     candidati = [s]
-    i, j = s.find("{"), s.rfind("}")
-    if 0 <= i < j:
-        candidati.append(s[i : j + 1])
+    slice_bilanciata = _balanced_json_slice(s)
+    if slice_bilanciata is not None:
+        candidati.append(slice_bilanciata)
     for c in candidati:
         for variante in (c, _fix_json_escapes(c)):
             try:

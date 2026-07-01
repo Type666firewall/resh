@@ -19,11 +19,15 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import logging
 import math
 import os
 from typing import Optional
 
 import numpy as np
+
+# stderr, mai stdout: mcp_server.py parla JSON-RPC su stdio, un print() qui lo romperebbe.
+logger = logging.getLogger(__name__)
 
 # TIPI / COSTANTI / DATI: import normali (non sono metodi — vedi regola Λ sotto).
 from .gamma.annotazione import AnnotatedDoc
@@ -214,7 +218,7 @@ async def analizza_async(
 ) -> RapportoResh:
     """Pipeline asincrona — ritorna RapportoResh completo."""
 
-    if verbose: print("  [1/4] Annotazione UD + encoding + chunking proposizionale...")
+    if verbose: logger.info("[1/4] Annotazione UD + encoding + chunking proposizionale...")
     doc = await _run_in_thread(annota, testo)
     embs = await _run_in_thread(encode, [s.text for s in doc.sentences])
 
@@ -224,7 +228,7 @@ async def analizza_async(
     prop_testi   = [p.testo for p in proposizioni]
     prop_embs    = await _run_in_thread(encode, prop_testi)
 
-    if verbose: print("  [2/4] Branch paralleli (profilo, fallacie, argomenti, coerenza, bias, stilometria)...")
+    if verbose: logger.info("[2/4] Branch paralleli (profilo, fallacie, argomenti, coerenza, bias, stilometria)...")
     (
         profilo,
         fallacie_pats,
@@ -242,7 +246,7 @@ async def analizza_async(
     )
     autorita, bias_pats = bias_tuple
 
-    if verbose: print("  [3/4] Premesse (entailment NLI) + sequitur (validità)...")
+    if verbose: logger.info("[3/4] Premesse (entailment NLI) + sequitur (validità)...")
     premesse = await _run_in_thread(analizza_premesse, testo, doc, embs)
     # Validità come entailment (van Dalen ch01/ch06): non-sequitur + candidati C₃.
     seq_pats = await _run_in_thread(verifica_sequitur, argomenti)
@@ -255,13 +259,13 @@ async def analizza_async(
     teleologia = _teleologia_deterministica(doc)
     obiettivo_fonte = "deterministica"
     if obiettivo_llm or os.getenv("P3_RESH_O_LLM") == "1":
-        if verbose: print("  [3/4] Estrazione Obiettivo O (LLM, opzionale)...")
+        if verbose: logger.info("[3/4] Estrazione Obiettivo O (LLM, opzionale)...")
         _o_ok = False
         try:
             _estrai_o = resolve(G.ESTRAI_OBIETTIVO)
         except Exception as exc:
             _estrai_o = None
-            print(f"[resh.core] resolve ESTRAI_OBIETTIVO fallito (graceful): {exc}")
+            logger.warning("resolve ESTRAI_OBIETTIVO fallito (graceful): %s", exc)
         if _estrai_o is not None:
             for _o_attempt in range(2):
                 try:
@@ -272,9 +276,9 @@ async def analizza_async(
                     _o_ok = True
                     break
                 except Exception as exc:
-                    print(f"[resh.core] O-extraction tentativo {_o_attempt+1} fallito: {exc}")
+                    logger.warning("O-extraction tentativo %d fallito: %s", _o_attempt + 1, exc)
         if not _o_ok:
-            print("[resh.core] O-extraction LLM fallita (graceful): uso deterministico")
+            logger.warning("O-extraction LLM fallita (graceful): uso deterministico")
 
     # Incoerenza INTRINSECA di O (O fallibile rappresentazione del volere): misura
     # deterministica della relazione dichiarato↔latente. `None` con O deterministico
@@ -458,7 +462,7 @@ async def analizza_async(
     # riceve il rapporto det (segnali strutturali NON_SEQUITUR/petitio).
     if induttivo_llm or os.getenv("P3_RESH_INDUTTIVO") == "1":
         rapporto.induttivo_richiesto = True
-        if verbose: print("  [4/4] Arsenale induttivo (LLM, opzionale)...")
+        if verbose: logger.info("[4/4] Arsenale induttivo (LLM, opzionale)...")
         try:
             _analizza_ind = resolve(G.ANALIZZA_INDUTTIVO)   # lazy: LLM-side
             rap_ind = await _run_in_thread(
@@ -475,7 +479,7 @@ async def analizza_async(
                 rap_ind.obiettivo if obiettivo_fonte != "llm" else teleologia,
                 integrita=integrita_io)
         except Exception as exc:
-            print(f"[resh.core] induttivo fallito (graceful): {exc}")
+            logger.warning("induttivo fallito (graceful): %s", exc)
             rapporto.induttivo = {"errore": f"{type(exc).__name__}: {exc}"}
 
     # ─── QuadroEpsilon (deterministico, SEMPRE: zero quota) ─────────────
@@ -488,7 +492,7 @@ async def analizza_async(
                    "componenti_esclusi": [k for k, v in componenti.items() if v is None]}
         rapporto.quadro_epsilon = _aggrega(det_min, rapporto.induttivo).as_dict()
     except Exception as exc:
-        print(f"[resh.core] quadro ε fallito (graceful): {exc}")
+        logger.warning("quadro ε fallito (graceful): %s", exc)
 
     # Sintesi narrativa LLM RIMOSSA (ADR-005): la voce spetta al Gateway (Σ-7);
     # il report di resh è «zero giudizio del formatter». legacy_llm.py in trash.

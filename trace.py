@@ -25,12 +25,15 @@ from __future__ import annotations
 
 import datetime
 import json
+import logging
 import os
 import sys
 
 from .cache import CACHE_DIR
 
 TRACE_PATH = CACHE_DIR / "llm_trace.jsonl"
+logger = logging.getLogger(__name__)
+_write_failed_warned = False
 
 
 def classifica(*, sanitized: str, raw: str, finish_reason: str | None,
@@ -87,8 +90,14 @@ def record(*, tag: str, profile: str, model: str, system: str, user: str,
         TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
         with TRACE_PATH.open("a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    except OSError:
-        pass
+    except OSError as exc:
+        global _write_failed_warned
+        if not _write_failed_warned:
+            _write_failed_warned = True
+            logger.warning(
+                "llm_trace.jsonl (%s) non scrivibile: %s — il record di onestà di "
+                "questo processo resterà incompleto da qui in avanti (avviso una tantum)",
+                TRACE_PATH, exc)
     if os.getenv("P3_LLM_VERBOSE") == "1":
         u = rec["usage"]
         tok = f"{u.get('completion_tokens','?')}tok" if u else "?tok"
