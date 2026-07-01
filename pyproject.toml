@@ -1,0 +1,56 @@
+# resh — packaging. Layout non convenzionale: la ROOT del repo è il package
+# `resh` (ha __init__.py e import relativi). `package-dir` mappa il nome del
+# package alla root, così `pip install -e .` funziona da qualunque cartella,
+# comunque sia stato clonato/rinominato il repo — niente più hack di sys.path.
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resh"
+version = "0.1.0"
+description = "ऋ (resh) — analisi critico-epistemica di testi: fallacie, premesse occultate, patologie argomentative, punteggio riproducibile ε_ऋ"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Type666firewall" }]
+keywords = ["epistemology", "argumentation", "fallacies", "nlp", "philosophy"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: Italian",
+    "Natural Language :: English",
+    "Topic :: Text Processing :: Linguistic",
+]
+# Dipendenze minime: la pipeline degrada gracefully senza lo stack ML
+# (vedi requirements.txt); openai serve al lato induttivo/LLM.
+dependencies = [
+    "numpy>=2.2.6",
+    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Stack ML completo TESTATO (ε riproducibile solo a parità di stack).
+full = [
+    "stanza>=1.12.2",
+    "sentence-transformers>=5.4.1",
+    "transformers>=5.8.0",
+    "torch>=2.11.0",
+    "scikit-learn>=1.9.0",
+    "bertopic>=0.17.4",
+]
+# Server MCP (mcp_server.py).
+mcp = ["mcp>=1.0.0"]
+
+[project.scripts]
+resh = "resh.cli:main"
+
+[project.urls]
+Repository = "https://github.com/Type666firewall/resh"
+
+[tool.setuptools]
+package-dir = { "resh" = "." }
+packages = ["resh", "resh.gamma"]
+
+[tool.setuptools.package-data]
+# Risorse caricate a runtime via Path(__file__): devono viaggiare col package.
+resh = ["prompts/*.md", "lessici/*.json"]

@@ -37,9 +37,17 @@ silenziosamente assente.
 Richiede Python 3.11+.
 
 ```bash
-pip install -r requirements.txt
-pip install --upgrade "torch>=2.6" --index-url https://download.pytorch.org/whl/cu124
+git clone https://github.com/Type666firewall/resh
+cd resh
+pip install -e .          # installa il package + il comando da terminale `resh`
+pip install -e ".[full]"  # come sopra, con lo stack ML completo (stanza, torch, NLI, embedding)
 python -c "import stanza; stanza.download('it'); stanza.download('en')"
+```
+
+Su GPU NVIDIA conviene installare torch con l'indice CUDA prima dello stack completo:
+
+```bash
+pip install --upgrade "torch>=2.6" --index-url https://download.pytorch.org/whl/cu124
 ```
 
 Senza Stanza/embedding installati il pacchetto degrada gracefully (fallback regex/hash) e lo
@@ -52,18 +60,20 @@ Per il lato induttivo serve una chiave API in `config.py` (vedi sotto sui modell
 
 ```bash
 # testo singolo, deterministico (zero LLM)
-python -m resh.cli mio_testo.md
+resh mio_testo.md
 
 # con lato induttivo (arsenale critico completo, ~14 call LLM)
-python -m resh.cli mio_testo.md --induttivo
+resh mio_testo.md --induttivo
 
 # documento intero, map-reduce, resumable
-python -m resh.cli documento paper.md --completo
+resh documento paper.md --completo
 
 # inglese — aggiungere --lang su entrambi i comandi
-python -m resh.cli my_paper.md --lang en
-python -m resh.cli documento my_paper.md --completo --lang en
+resh my_paper.md --lang en
+resh documento my_paper.md --completo --lang en
 ```
+
+(`python -m resh.cli` resta equivalente a `resh` se si preferisce invocare il modulo.)
 
 Uso come libreria:
 
@@ -116,9 +126,22 @@ resh/
 
 ## Configurazione utile
 
-- `P3_LLM_MODEL` / `P3_LLM_BASE_URL` — override esplicito di modello/endpoint
+Tutto via variabili d'ambiente — nessun file da modificare:
+
+- `P3_ACTIVE_PROFILE=<nome>` — profilo LLM attivo (vedi `PROFILES` in `config.py`; default
+  `gemma-31`). Es.: `local` per LM Studio, o un profilo cloud.
+- `P3_LLM_MODEL` / `P3_LLM_BASE_URL` — override esplicito di modello/endpoint, vincono sul
+  profilo attivo. Utile per puntare a qualunque endpoint OpenAI-compatibile senza toccare
+  `config.py`.
+- `P3_LLM_API_KEY` — chiave API esplicita, vince su qualunque chiave del provider
+  (`OPENAI_API_KEY`, `P3_GEMINI_API_KEY`, ...).
+- `P3_LLM_TIMEOUT=<secondi>` — timeout per singola call LLM (default: il timeout del profilo
+  attivo, 120s a livello client). Da alzare con modelli locali lenti o varianti "thinking";
+  da abbassare per fallire-veloce su endpoint instabili. Una call che scade viene tracciata
+  come `error` e scartata, non blocca la pipeline.
 - `P3_LLM_VERBOSE=1` — log delle call su stderr
 - `P3_RESH_CACHE=<dir>` / `P3_RESH_DB=<dir>` — override delle directory cache/DB
+- `P3_RESH_CACHE_DISABLE=1` — disattiva la cache dei risultati (ogni run ricalcola da zero)
 - `P3_RESH_TRACE_DISABLE=1` — disattiva il trace delle call LLM
 
 ## Esempi
