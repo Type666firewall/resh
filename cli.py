@@ -182,6 +182,8 @@ def _documento_main(argv: list[str]) -> int:
     ap.add_argument("--no-resume", action="store_true", help="ignora i chunk cachati")
     ap.add_argument("--no-save", action="store_true", help="non persistere il run nel DB")
     ap.add_argument("--out", type=str, default=None, help="path report markdown (default: <file>.report.md)")
+    ap.add_argument("--lang", type=str, default=None, choices=["it", "en"],
+                    help="lingua del testo (default: rilevata da frontmatter, altrimenti it)")
     args = ap.parse_args(argv)
 
     p = Path(args.file)
@@ -199,6 +201,7 @@ def _documento_main(argv: list[str]) -> int:
         assi_chunk=(args.assi.split(",") if args.assi else None),
         profile=args.profile, max_call_budget=args.budget,
         resume=not args.no_resume, target_char=args.target_char,
+        lang=args.lang,
     )
 
     run_uid = ""
@@ -352,6 +355,8 @@ def main(argv: list[str] | None = None) -> int:
                              "Non rilancia l'analisi.")
     parser.add_argument("--no-json-appendix", action="store_true",
                         help="(con --report-from-db) omette l'appendice JSON dal report")
+    parser.add_argument("--lang", type=str, default=None, choices=["it", "en"],
+                        help="lingua del testo (default: it)")
     args = parser.parse_args(argv)
 
     # --- Modo 2: report da DB (no re-analisi) ---
@@ -372,7 +377,8 @@ def main(argv: list[str] | None = None) -> int:
         testo = "Gorgia sostiene che il logos è un potere sull'anima. Ovviamente la verità non esiste."
         nome_doc = "TESTO_TEST"
 
-    rapporto = analizza(testo, induttivo_llm=args.induttivo, verbose=not args.quiet)
+    rapporto = analizza(testo, induttivo_llm=args.induttivo, verbose=not args.quiet,
+                        lang=args.lang)
 
     if args.file:
         esito = save_run(rapporto, file_path=p)

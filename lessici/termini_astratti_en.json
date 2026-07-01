@@ -1,0 +1,119 @@
+{
+  "_schema": "v0.1 REVERSIBLE — candidates for ABSTRACT TERM (lexical presence, NOT verdict). Default settings; not a permanent schema. The judgment of whether a candidate is an illusory abstract idea that conceals a normative/metaphysical definition remains INDUCTIVE.",
+  "_note": "Berkeleyan critique of abstract ideas (Treatise, Intro §§7-25): a general term that claims to name a determinate thing without particular/ostensible content is where normative stipulations and metaphysical posits hide. Here, candidates are surfaced via morphology (nominalizations) + curated lexicon. Over-generates by design: the LLM filters based on O.",
+  "_updateability": "metaphysical_terms is EXPANDIBLE: terms are promoted via inductive.promuovi_termine() (feedback loop or user request). concealment_taxonomy is UPDATEABLE: add/rename entries here, the prompts read it from here. Nothing is permanent in the code.",
+  "tassonomia_occultamento": [
+    {
+      "tipo": "contenuto_determinato",
+      "desc": "the term has a particular/ostensible referent -> NOT an illusory abstraction"
+    },
+    {
+      "tipo": "stipulazione_normativa",
+      "desc": "dissolves into a prescriptive definition ('X is what ought to...')"
+    },
+    {
+      "tipo": "posito_metafisico",
+      "desc": "names a posited entity without ostensive content"
+    },
+    {
+      "tipo": "ostensione_forma_di_vita",
+      "desc": "the chain ends in an ostensive gesture / shared use (Berkeley->Wittgenstein)"
+    }
+  ],
+  "suffissi_nominalizzanti": [
+    {
+      "suffisso": "ity",
+      "min_len": 5,
+      "nota": "reality, objectivity, truth, identity — high precision"
+    },
+    {
+      "suffisso": "tion",
+      "min_len": 6,
+      "nota": "abstraction, representation, relation"
+    },
+    {
+      "suffisso": "sion",
+      "min_len": 6,
+      "nota": "comprehension, dimension, extension"
+    },
+    {
+      "suffisso": "ism",
+      "min_len": 6,
+      "nota": "positivism, realism, objectivism"
+    },
+    {
+      "suffisso": "ence",
+      "min_len": 6,
+      "nota": "essence, presence, coherence, evidence"
+    },
+    {
+      "suffisso": "ance",
+      "min_len": 6,
+      "nota": "substance, constancy"
+    },
+    {
+      "suffisso": "ness",
+      "min_len": 5,
+      "nota": "certainty, brightness, clarity"
+    },
+    {
+      "suffisso": "tude",
+      "min_len": 6,
+      "nota": "attitude, certitude"
+    }
+  ],
+  "termini_metafisici": [
+    "reality",
+    "truth",
+    "being",
+    "essence",
+    "nature",
+    "substance",
+    "objectivity",
+    "subjectivity",
+    "consciousness",
+    "spirit",
+    "matter",
+    "absolute",
+    "foundation",
+    "totality",
+    "identity",
+    "presence",
+    "origin",
+    "fact",
+    "facts",
+    "world",
+    "correspondence",
+    "representation",
+    "knowledge",
+    "evidence",
+    "necessity",
+    "universal",
+    "infinite",
+    "immediacy",
+    "object",
+    "subject",
+    "event"
+  ],
+  "stopwords_suffisso": [
+    "information",
+    "action",
+    "option",
+    "station",
+    "portion",
+    "region",
+    "season",
+    "tension",
+    "pressure",
+    "decision",
+    "version",
+    "edition",
+    "motion",
+    "nation",
+    "section",
+    "condition",
+    "position",
+    "mention",
+    "attention"
+  ]
+}

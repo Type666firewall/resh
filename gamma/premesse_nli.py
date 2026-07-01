@@ -39,9 +39,23 @@ def _load_lex(name: str) -> set[str]:
     return {l.strip().lower() for l in p.read_text(encoding="utf-8").splitlines() if l.strip()}
 
 
-_BOOSTERS = _load_lex("booster_it.txt")
-_UNIV_QUANT = {"tutti","tutte","sempre","mai","ogni","nessuno","nessuna",
-               "chiunque","ovunque","qualsiasi","qualunque"}
+_UNIV_QUANT_IT = {"tutti","tutte","sempre","mai","ogni","nessuno","nessuna",
+                  "chiunque","ovunque","qualsiasi","qualunque"}
+_UNIV_QUANT_EN = {"all", "every", "everyone", "everything", "always", "never", "no one",
+                  "nobody", "none", "nothing", "any", "anyone", "anything", "anywhere",
+                  "whoever", "whatever"}
+
+_PREM_CACHE: dict[str, tuple] = {}
+
+
+def _get_premesse_lex() -> tuple[set[str], set[str]]:
+    from .. import config
+    lang = config.LANG.get()
+    if lang not in _PREM_CACHE:
+        boosters = _load_lex(f"booster_{lang}.txt")
+        univ_quant = _UNIV_QUANT_EN if lang == "en" else _UNIV_QUANT_IT
+        _PREM_CACHE[lang] = (boosters, univ_quant)
+    return _PREM_CACHE[lang]
 
 
 def _candidate_premises_from_doc(doc: AnnotatedDoc, max_n: int = 8) -> list[str]:
@@ -82,10 +96,11 @@ def _candidate_premises_from_doc(doc: AnnotatedDoc, max_n: int = 8) -> list[str]
 
 
 def _is_sospetta(candidata: str) -> bool:
+    boosters, univ_quant = _get_premesse_lex()
     low = candidata.lower()
-    if any(q in low.split() for q in _UNIV_QUANT):
+    if any(q in low.split() for q in univ_quant):
         return True
-    for b in _BOOSTERS:
+    for b in boosters:
         # match parola intera
         if re.search(r"\b" + re.escape(b) + r"\b", low):
             return True

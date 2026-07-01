@@ -34,20 +34,32 @@ def _load_lex(name: str) -> set[str]:
     }
 
 
-_HEDGES   = _load_lex("hedging_it.txt")
-_BOOSTERS = _load_lex("booster_it.txt")
-
-# Multi-word entries: precomputiamo regex per match in testo grezzo
-_HEDGE_RE   = re.compile(r"\b(" + "|".join(re.escape(h) for h in sorted(_HEDGES,  key=len, reverse=True)) + r")\b",
-                         re.IGNORECASE) if _HEDGES else None
-_BOOSTER_RE = re.compile(r"\b(" + "|".join(re.escape(b) for b in sorted(_BOOSTERS, key=len, reverse=True)) + r")\b",
-                         re.IGNORECASE) if _BOOSTERS else None
-
-_AD_VEREC_RE = re.compile(
+_AD_VEREC_RE_IT = re.compile(
     r"\bcome\s+(?:disse|sostiene|sosteneva|afferma|affermava|dimostra|dimostrò|"
     r"ha\s+detto|scriveva|insegnava)\s+([A-ZÀ-Ý][a-zà-ÿ]+(?:\s+[A-ZÀ-Ý][a-zà-ÿ]+)?)",
     re.UNICODE,
 )
+_AD_VEREC_RE_EN = re.compile(
+    r"\b(?:as\s+(?:said|argued|claimed|argues|claims|demonstrated|demonstrates|wrote|stated)\s+by\s+"
+    r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)|"
+    r"as\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:said|argued|claims|argues|wrote|stated))\b"
+)
+
+_LEX_CACHE: dict[str, tuple] = {}
+
+
+def _get_lexicons(lang: str) -> tuple:
+    """(hedge_re, booster_re, ad_verec_re) per lingua — cache per processo."""
+    if lang not in _LEX_CACHE:
+        hedges   = _load_lex(f"hedging_{lang}.txt")
+        boosters = _load_lex(f"booster_{lang}.txt")
+        hedge_re   = re.compile(r"\b(" + "|".join(re.escape(h) for h in sorted(hedges,   key=len, reverse=True)) + r")\b",
+                                re.IGNORECASE) if hedges else None
+        booster_re = re.compile(r"\b(" + "|".join(re.escape(b) for b in sorted(boosters, key=len, reverse=True)) + r")\b",
+                                re.IGNORECASE) if boosters else None
+        ad_verec_re = _AD_VEREC_RE_EN if lang == "en" else _AD_VEREC_RE_IT
+        _LEX_CACHE[lang] = (hedge_re, booster_re, ad_verec_re)
+    return _LEX_CACHE[lang]
 
 
 def _conta_match(testo: str, regex: re.Pattern | None) -> int:
@@ -81,11 +93,14 @@ def _persone_da_doc(doc: AnnotatedDoc) -> list[str]:
 def analizza_bias_autorita(testo: str, doc: AnnotatedDoc) -> tuple[AutoritaCriteri, list[Patologia]]:
     """Ritorna (AutoritaCriteri legacy, list[Patologia] strutturato)."""
 
+    from .. import config
+    hedge_re, booster_re, ad_verec_re = _get_lexicons(config.LANG.get())
+
     n_token = max(1, sum(1 for s in doc.sentences for w in s.words
                          if w.text.isalpha()))
 
-    n_hedges   = _conta_match(testo, _HEDGE_RE)
-    n_boosters = _conta_match(testo, _BOOSTER_RE)
+    n_hedges   = _conta_match(testo, hedge_re)
+    n_boosters = _conta_match(testo, booster_re)
 
     hedging_ratio  = n_hedges   / n_token
     booster_ratio  = n_boosters / n_token
@@ -116,10 +131,11 @@ def analizza_bias_autorita(testo: str, doc: AnnotatedDoc) -> tuple[AutoritaCrite
         bias_rilevati.append(f"booster_eccesso({booster_ratio:.3f})")
 
     # ad verecundiam non citato: PER + verbo dicendi, senza virgolette nelle ~80 char dopo
-    av_matches = list(_AD_VEREC_RE.finditer(testo))
+    av_matches = list(ad_verec_re.finditer(testo))
     fonti_invocate: list[str] = []
     for m in av_matches:
-        nome = m.group(1)
+        _nomi = [g for g in m.groups() if g]   # IT: 1 gruppo; EN: 2 alternativi, uno solo valorizzato
+        nome = _nomi[0] if _nomi else ""
         fine = m.end()
         finestra = testo[fine : fine + 100]
         ha_virgolette = bool(re.search(r"[\"«»“”']", finestra))

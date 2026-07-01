@@ -40,19 +40,13 @@ def _load_lex(name: str) -> set[str]:
     return {l.strip().lower() for l in p.read_text(encoding="utf-8").splitlines() if l.strip()}
 
 
-_CAUSALI = _load_lex("connettivi_causali_it.txt")
-_AVV     = _load_lex("connettivi_avversativi_it.txt")
-_INDUTTIVI = {"spesso","in genere","talvolta","talora","a volte","generalmente",
-              "in linea di massima","grosso modo","molti","molte","la maggior parte",
-              "frequentemente","raramente","tendenzialmente","mediamente",
-              "nella maggior parte dei casi","in genere"}
-_BOOSTER  = {"ovviamente","certamente","chiaramente","evidentemente","indubbiamente",
-             "senza dubbio","è ovvio","è chiaro","è evidente","è certo","naturalmente",
-             "è palese","è manifesto","senza alcun dubbio"}
-
-# Pattern esplicativi/inferenziali aggiuntivi — sparano "deduttivo" anche
-# in assenza dei connettivi scolastici di _CAUSALI.
-_DEDUTTIVI_ESPLICATIVI = (
+# Pattern esplicativi/inferenziali aggiuntivi (sparano "deduttivo" anche in
+# assenza dei connettivi da lessico) e marker conclusivi (fallback tesi/premesse):
+# NON esternalizzati come gli altri lessici — alcune entry dipendono dal padding
+# di spazi per un boundary-matching approssimato senza regex (" allora " ≠ "allora",
+# evita match dentro altre parole). Un file di testo a righe stripperebbe quel
+# padding e romperebbe silenziosamente il matching: restano hardcoded per lingua.
+_DEDUTTIVI_ESPLICATIVI_IT = (
     "infatti", "appunto", "in effetti", "ne consegue", "ne deriva", "deriva che",
     "mostra che", "dimostra che", "dimostra come", "implica che", "implica una",
     "comporta che", "comporta una", "significa che", "vuol dire che",
@@ -60,13 +54,38 @@ _DEDUTTIVI_ESPLICATIVI = (
     "se ", " allora ", " allora,", " allora.",      # condizionali if-then
     "qualora", "purché",
 )
-
-# Frasi che attribuiscono un'asserzione a terzi → "retorico" (citazione/autorità).
-_RETORICI_ATTRIBUTIVI = (
-    "afferma che", "sostiene che", "argomenta che", "ritiene che", "scrive che",
-    "secondo cui", "a parere di", "a giudizio di", "ad avviso di",
-    "come noto", "è noto che", "è risaputo che",
+_DEDUTTIVI_ESPLICATIVI_EN = (
+    "indeed", "in fact", "it follows", "it derives", "shows that", "proves that",
+    "implies that", "implies a", "means that", "this means", "this proves",
+    "this shows", "this implies", "if ", " then ", "provided that", "as long as",
 )
+_CONCL_MARKERS_IT = (
+    "dunque", "quindi", "perciò", "percio", "pertanto", "ne consegue",
+    "ne deriva", "se ne deduce", "allora", "deve", "devono", "dev'",
+)
+_CONCL_MARKERS_EN = (
+    "therefore", "thus", "hence", "consequently", "so", "it follows",
+    "it derives", "then", "must", "should",
+)
+
+_LEX_CACHE: dict[str, dict] = {}
+
+
+def _get_lex(lang: str) -> dict:
+    """Lessici per lingua: causali/avversativi/induttivi/booster/retorici da
+    file esterni (curabili senza toccare codice); deduttivi/concl_markers
+    restano hardcoded per il motivo di boundary-matching sopra."""
+    if lang not in _LEX_CACHE:
+        _LEX_CACHE[lang] = {
+            "causali":    _load_lex(f"connettivi_causali_{lang}.txt"),
+            "avv":        _load_lex(f"connettivi_avversativi_{lang}.txt"),
+            "induttivi":  _load_lex(f"induttivi_{lang}.txt"),
+            "booster":    _load_lex(f"booster_{lang}.txt"),
+            "retorici":   _load_lex(f"retorici_attributivi_{lang}.txt"),
+            "deduttivi":  _DEDUTTIVI_ESPLICATIVI_EN if lang == "en" else _DEDUTTIVI_ESPLICATIVI_IT,
+            "concl":      _CONCL_MARKERS_EN if lang == "en" else _CONCL_MARKERS_IT,
+        }
+    return _LEX_CACHE[lang]
 
 LABELS = [
     "affermazione di tesi",
@@ -83,18 +102,20 @@ def _classify_tipo(testo: str) -> str:
     (deduttivo: contrasto = inferenza implicita). Solo se nessuno spara,
     'non classificabile'.
     """
+    from .. import config
+    lex = _get_lex(config.LANG.get())
     low = " " + testo.lower() + " "
-    if any(c in low for c in _CAUSALI):
+    if any(c in low for c in lex["causali"]):
         return "deduttivo"
-    if any(q in low for q in _INDUTTIVI):
+    if any(q in low for q in lex["induttivi"]):
         return "induttivo"
-    if any(b in low for b in _BOOSTER):
+    if any(b in low for b in lex["booster"]):
         return "retorico"
-    if any(r in low for r in _RETORICI_ATTRIBUTIVI):
+    if any(r in low for r in lex["retorici"]):
         return "retorico"
-    if any(d in low for d in _DEDUTTIVI_ESPLICATIVI):
+    if any(d in low for d in lex["deduttivi"]):
         return "deduttivo"
-    if any(a in low for a in _AVV):
+    if any(a in low for a in lex["avv"]):
         return "deduttivo"          # contrasto = inferenza implicita
     return "non classificabile"
 
@@ -109,24 +130,19 @@ def _premesse_usate(frase: str, candidate: list[str], embeddings: np.ndarray, id
     return [candidate[i] for i in top if sim[i] > 0.4]
 
 
-# Marcatori conclusivi: introducono la tesi/conclusione (per il fallback).
-_CONCL_MARKERS = (
-    "dunque", "quindi", "perciò", "percio", "pertanto", "ne consegue",
-    "ne deriva", "se ne deduce", "allora", "deve", "devono", "dev'",
-)
-
-
 def _inventario_fallback(frasi: list[str], embeddings: np.ndarray) -> list[Argomento]:
     """Inventario euristico deterministico quando l'NLI non isola premesse
     (frequente su proposizioni brevi). Tesi = ultima unità con marcatore
     conclusivo (o l'ultima in assenza); le altre unità sono premesse. La tesi è
     esclusa dalle `premesse_usate` per non rendere la verifica circolare."""
+    from .. import config
+    concl_markers = _get_lex(config.LANG.get())["concl"]
     if len(frasi) < 2:
         return []
     tesi_idx = None
     for i, f in enumerate(frasi):
         low = f.lower()
-        if any(m in low for m in _CONCL_MARKERS):
+        if any(m in low for m in concl_markers):
             tesi_idx = i
     if tesi_idx is None:
         return []   # nessun connettivo conclusivo ⇒ testo non-argomentativo, niente argomento

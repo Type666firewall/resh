@@ -26,12 +26,15 @@ Cache: il modulo Stanza è caricato 1x (singleton); il risultato di annota()
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass, field
 from typing import Optional
 
 from ..cache import cache_get, cache_set
+
+logger = logging.getLogger(__name__)
 
 
 # ─── dataclass API canonica ──────────────────────────────────────────────────
@@ -71,10 +74,10 @@ class AnnotatedDoc:
     backend:   str            = "fallback"   # "stanza" | "fallback"
 
 
-# ─── singleton Stanza (lazy) ──────────────────────────────────────────────────
+# ─── singleton Stanza (lazy, uno per lingua) ─────────────────────────────────
 
-_STANZA_PIPELINE = None
-_STANZA_AVAILABLE: Optional[bool] = None
+_STANZA_PIPELINES: dict[str, object] = {}
+_STANZA_AVAILABLE: dict[str, bool] = {}
 
 
 def _stanza_disabled() -> bool:
@@ -82,11 +85,12 @@ def _stanza_disabled() -> bool:
 
 
 def _try_load_stanza():
-    global _STANZA_PIPELINE, _STANZA_AVAILABLE
-    if _STANZA_AVAILABLE is False:
+    from .. import config
+    lang = config.LANG.get()
+    if _STANZA_AVAILABLE.get(lang) is False:
         return None
-    if _STANZA_PIPELINE is not None:
-        return _STANZA_PIPELINE
+    if lang in _STANZA_PIPELINES:
+        return _STANZA_PIPELINES[lang]
     try:
         import stanza  # noqa: F401
         use_gpu = False
@@ -95,25 +99,29 @@ def _try_load_stanza():
             use_gpu = bool(torch.cuda.is_available())
         except Exception:
             pass
-        # ml_registry: stanza-it ~700 MB (mix GPU/CPU)
+        # ml_registry: stanza-it/stanza-en ~700 MB (mix GPU/CPU)
         try:
             from ml_registry import acquire as _ml_acquire
-            _ml_acquire("stanza-it")
+            _ml_acquire(f"stanza-{lang}")
         except Exception:
             pass
-        _STANZA_PIPELINE = stanza.Pipeline(
-            lang       = "it",
-            processors = "tokenize,mwt,pos,lemma,depparse,ner",
+        # mwt (multi-word token expansion) è un processor italiano-specifico:
+        # l'inglese non ne ha bisogno e stanza rifiuta il processor se richiesto.
+        processors = ("tokenize,pos,lemma,depparse,ner" if lang == "en"
+                      else "tokenize,mwt,pos,lemma,depparse,ner")
+        _STANZA_PIPELINES[lang] = stanza.Pipeline(
+            lang       = lang,
+            processors = processors,
             use_gpu    = use_gpu,
             verbose    = False,
             download_method = None,   # NO download automatici (Σ_w controlla)
         )
-        _STANZA_AVAILABLE = True
-        return _STANZA_PIPELINE
+        _STANZA_AVAILABLE[lang] = True
+        return _STANZA_PIPELINES[lang]
     except Exception as exc:
-        # Stanza non installato o modelli non scaricati → fallback silente
-        print(f"[resh.annotazione] stanza non disponibile, fallback regex: {exc}")
-        _STANZA_AVAILABLE = False
+        # Stanza non installato o modelli non scaricati per questa lingua → fallback silente
+        logger.warning("stanza non disponibile per lang=%s, fallback regex: %s", lang, exc)
+        _STANZA_AVAILABLE[lang] = False
         return None
 
 
@@ -123,8 +131,30 @@ _SENT_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-ZÀ-ÝΑ-Ω])")
 _TOKEN_RE   = re.compile(r"\w+|[^\w\s]", re.UNICODE)
 
 
+# Euristiche POS grossolane del fallback regex, per lingua — deliberatamente
+# minimali (nessuna morfologia reale): degradano gracefully, non sostituiscono Stanza.
+_FALLBACK_POS_IT = {
+    "det":   {"il","la","lo","i","le","gli","un","uno","una","del","della"},
+    "cconj": {"e","o","ma"},
+    "sconj": {"quindi","perché","se","mentre"},
+    "adv":   {"non","mai","sempre","molto","poco","più","meno"},
+    "verb_suffix": ("are","ere","ire","ato","uto","ito","ando","endo"),
+    "noun_suffix": ("zione","mento","tà","ità","ezza","anza","enza"),
+}
+_FALLBACK_POS_EN = {
+    "det":   {"the","a","an","this","that","these","those","my","your","his","her","its","our","their"},
+    "cconj": {"and","or","but"},
+    "sconj": {"yet","so","because","if","while","although","though","therefore","thus","hence","consequently"},
+    "adv":   {"not","never","always","very","often","quite","too","more","less"},
+    "verb_suffix": ("ing","ed"),
+    "noun_suffix": ("tion","ment","ity","ness","ism","ance","ence"),
+}
+
+
 def _annota_fallback(testo: str) -> AnnotatedDoc:
     """Tokenizzazione/segmentazione minimal — niente POS reali."""
+    from .. import config
+    pos = _FALLBACK_POS_EN if config.LANG.get() == "en" else _FALLBACK_POS_IT
     sentences: list[Sentence] = []
     cursor = 0
     for raw in _SENT_SPLIT.split(testo):
@@ -139,15 +169,17 @@ def _annota_fallback(testo: str) -> AnnotatedDoc:
             # Euristica grossolana POS:
             if tok.isalpha():
                 low = tok.lower()
-                if low in {"il","la","lo","i","le","gli","un","uno","una","del","della"}:
+                if low in pos["det"]:
                     upos = "DET"
-                elif low in {"e","o","ma","però","quindi","perché","se","mentre"}:
-                    upos = "CCONJ" if low in {"e","o","ma"} else "SCONJ"
-                elif low in {"non","mai","sempre","molto","poco","più","meno"}:
+                elif low in pos["cconj"]:
+                    upos = "CCONJ"
+                elif low in pos["sconj"]:
+                    upos = "SCONJ"
+                elif low in pos["adv"]:
                     upos = "ADV"
-                elif low.endswith(("are","ere","ire","ato","uto","ito","ando","endo")):
+                elif low.endswith(pos["verb_suffix"]):
                     upos = "VERB"
-                elif low.endswith(("zione","mento","tà","ità","ezza","anza","enza")):
+                elif low.endswith(pos["noun_suffix"]):
                     upos = "NOUN"
                 else:
                     upos = "NOUN"     # default conservativo
@@ -292,15 +324,16 @@ def _doc_from_dict(d: dict) -> AnnotatedDoc:
 
 
 def reset_singleton() -> None:
-    """Forza ricarica della pipeline al prossimo annota() — test-utility."""
-    global _STANZA_PIPELINE, _STANZA_AVAILABLE
-    _STANZA_PIPELINE  = None
-    _STANZA_AVAILABLE = None
+    """Forza ricarica delle pipeline al prossimo annota() — test-utility."""
+    _STANZA_PIPELINES.clear()
+    _STANZA_AVAILABLE.clear()
 
 
 def backend_info() -> str:
+    from .. import config
+    lang = config.LANG.get()
     if _stanza_disabled():
         return "fallback (P3_RESH_STANZA_DISABLE=1)"
-    if _STANZA_AVAILABLE is None:
+    if lang not in _STANZA_AVAILABLE:
         return "lazy (not loaded)"
-    return "stanza" if _STANZA_AVAILABLE else "fallback (stanza unavailable)"
+    return "stanza" if _STANZA_AVAILABLE[lang] else "fallback (stanza unavailable)"

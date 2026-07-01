@@ -28,6 +28,7 @@ HW locale di riferimento (per i profili `local`): i5-13600KF (14C/20T),
 
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import threading
@@ -35,6 +36,18 @@ import time
 from dataclasses import dataclass, replace
 from functools import lru_cache
 from typing import Optional
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lingua attiva — ContextVar, non un attributo di modulo mutabile: isolata per
+# task asyncio, quindi due analisi concorrenti in lingue diverse nello stesso
+# processo (es. mcp_server.py con richieste interlacciate) non si pestano i
+# piedi. Set all'ingresso (core.analizza/analizza_async, documento.py), letta
+# dai gamma con `config.LANG.get()`. Default "it" (env P3_LANG solo come seed
+# iniziale del processo, non riletta a ogni call).
+# ─────────────────────────────────────────────────────────────────────────────
+LANG: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "resh_lang", default=os.getenv("P3_LANG", "it"))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -163,26 +163,33 @@ def analizza_documento_induttivo(
     con_astratti: bool = False, profile: Optional[str] = None,
     max_call_budget: Optional[int] = None, resume: bool = True,
     usa_pulizia: bool = True, det: bool = True, target_char: int = 4000,
+    lang: Optional[str] = None,
 ) -> RapportoDocumento:
     """Analizza un documento intero (map-reduce). Vedi docstring modulo.
 
     - `arsenale_completo=True`: per ogni chunk gira TUTTI gli assi (Arsenale + ऋ⁰⁺–ऋ⁹
       + Trilemma + Inclosura), non il sottoinsieme `assi_chunk`. Test complessivo.
     - `con_astratti=True`: aggiunge la diagnosi Berkeley dei termini astratti per chunk.
+    - `lang`: lingua esplicita ("it"/"en"); se assente si rileva dal frontmatter,
+      altrimenti default "it". Setta il ContextVar `config.LANG` per la durata
+      di questa chiamata (isolato per task asyncio, non un globale di processo).
     """
     assi_chunk = assi_chunk or list(ASSI_CHUNK_DEFAULT)
     assi_eff = None if arsenale_completo else assi_chunk   # None = tutti gli assi
     dh = _doc_hash(testo)
+
+    lingua = lang or (_lingua_frontmatter(testo) if usa_pulizia else None) or "it"
+    _lang_token = config.LANG.set(lingua)
+
     # La chiave-cache include la CONFIG di analisi: analisi diverse (target_char,
-    # arsenale completo vs sottoinsieme, astratti, det) NON collidono sullo stesso
-    # chunk_<id>.json — evita il bug di ricaricare chunk stale di un'altra config.
-    sig_src = f"tc={target_char}|full={arsenale_completo}|assi={sorted(assi_eff) if assi_eff else 'ALL'}|astr={con_astratti}|det={det}"
+    # arsenale completo vs sottoinsieme, astratti, det, lingua) NON collidono sullo
+    # stesso chunk_<id>.json — evita il bug di ricaricare chunk stale di un'altra config.
+    sig_src = f"tc={target_char}|full={arsenale_completo}|assi={sorted(assi_eff) if assi_eff else 'ALL'}|astr={con_astratti}|det={det}|lang={lingua}"
     sig = hashlib.sha256(sig_src.encode("utf-8")).hexdigest()[:8]
     cdir = _CACHE / f"doc_{dh}_{sig}"
     cdir.mkdir(parents=True, exist_ok=True)
 
     ricorrenti = _righe_ricorrenti(testo) if usa_pulizia else set()
-    lingua = _lingua_frontmatter(testo) if usa_pulizia else None
     chunks = _segmenta_documento(testo, target_char=target_char)
 
     def _clean(t: str) -> str:
@@ -289,6 +296,7 @@ def analizza_documento_induttivo(
                 call_count, len(riparati), len(saltati))
     eps_doc = _aggrega_epsilon(eps_per_chunk)
     sintesi_doc = _sintesi_finale(O, note_chunk, profile) if note_chunk else ""
+    config.LANG.reset(_lang_token)   # non lasciare lingua "appesa" oltre questa chiamata
 
     return RapportoDocumento(
         fonte=fonte, lingua=lingua, n_chunk=len(chunks), obiettivo=O,

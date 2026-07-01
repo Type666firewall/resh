@@ -504,6 +504,8 @@ def promuovi_termine(termine: str, *, motivo: str = "", canale: str = "richiesta
     t = (termine or "").strip().lower()
     if not t:
         return {"stato": "vuoto"}
+    if len(t) > 64 or "\n" in t or not re.fullmatch(r"[\w\s'’\-]+", t, flags=re.UNICODE):
+        return {"stato": "rifiutato_formato", "termine": t[:80]}
     lex = _load_abstract_lex()
     lista = lex.get("termini_metafisici", [])
     if t in {x.lower() for x in lista}:

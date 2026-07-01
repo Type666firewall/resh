@@ -417,8 +417,23 @@ def export_dataset(db_path: Optional[Path] = None) -> Optional[Path]:
         writer.writeheader()
         writer.writerows(dataset)
 
+    # Sidecar di versione/schema — senza, due export in momenti diversi (con
+    # _PROFILO_KEYS/_COMP_KEYS cambiati nel frattempo) sono indistinguibili se
+    # non rileggendo le colonne a mano: un training su CSV vecchio+nuovo mischiati
+    # passerebbe inosservato.
+    meta = {
+        "generato": datetime.now().isoformat(timespec="seconds"),
+        "righe": len(dataset),
+        "colonne": fieldnames,
+        "profilo_keys": _PROFILO_KEYS,
+        "comp_keys": _COMP_KEYS,
+    }
+    meta_file = _DATASET_FILE.with_suffix(".meta.json")
+    meta_file.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
     print(f"Dataset esportato: {_DATASET_FILE.absolute()}")
     print(f"  righe: {len(dataset)}  |  colonne: {len(fieldnames)}")
+    print(f"  meta:  {meta_file.absolute()}")
     return _DATASET_FILE
 
 

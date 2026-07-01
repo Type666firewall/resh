@@ -1,0 +1,84 @@
+{
+  "_schema": "v1",
+  "_note": "Regex patterns for deterministic capture of linguistically marked fallacies in English. Confidence is moderate (0.45-0.65) and is verified/integrated by the NLI classifier on the validation set.",
+  "patterns": [
+    {
+      "tipo": "ad_populum",
+      "regex": "\\b(everyone\\s+knows|we\\s+all\\s+(know|think)|no\\s+one\\s+(denies|doubts|questions)|anyone\\s+can\\s+see|it\\s+is\\s+obvious\\s+(to|for)\\s+everyone)\\b",
+      "severita": 0.65,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "petitio_principii",
+      "regex": "\\b(obviously|clearly|evidently|of\\s+course|as\\s+everyone\\s+knows|as\\s+is\\s+obvious)\\b",
+      "severita": 0.45,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "ad_verecundiam",
+      "regex": "\\bas\\s+[A-Z][a-z]+\\s+(said|claims|claimed|stated|wrote|argued|demonstrated)\\b",
+      "severita": 0.55,
+      "confidence": 0.6
+    },
+    {
+      "tipo": "ad_hominem",
+      "regex": "\\b(is\\s+only\\s+a|nothing\\s+but\\s+a|is\\s+an?\\s+(idiot|ignorant|incompetent|madman|fool|jerk|liar)|such\\s+a\\s+person\\s+cannot)\\b",
+      "severita": 0.7,
+      "confidence": 0.65
+    },
+    {
+      "tipo": "false_dilemma",
+      "regex": "\\b(either\\s+\\S+\\s+or\\s+\\S+|there\\s+is\\s+no\\s+other\\s+(way|choice|option)|the\\s+only\\s+alternative|either\\s+we\\s+\\S+\\s+or\\s+we|you\\s+are\\s+either\\s+with\\s+us\\s+or)\\b",
+      "severita": 0.55,
+      "confidence": 0.5
+    },
+    {
+      "tipo": "slippery_slope",
+      "regex": "\\b(if\\s+we\\s+allow\\s+\\S+\\s+(then|it\\s+will)|will\\s+inevitably\\s+lead\\s+to|we\\s+will\\s+end\\s+up|the\\s+beginning\\s+of\\s+the\\s+end|slippery\\s+slope)\\b",
+      "severita": 0.6,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "hasty_generalization",
+      "regex": "\\b(all\\s+\\S+\\s+are|no\\s+\\S+\\s+is\\s+ever|always\\s+and\\s+without\\s+exception|in\\s+every\\s+case\\s+without\\s+exception)\\b",
+      "severita": 0.55,
+      "confidence": 0.5
+    },
+    {
+      "tipo": "appeal_to_emotion",
+      "regex": "\\b(think\\s+(of|about)\\s+the\\s+(children|victims|innocent)|how\\s+can\\s+we\\s+allow|it\\s+would\\s+be\\s+horrible\\s+if|show\\s+no\\s+mercy)\\b",
+      "severita": 0.55,
+      "confidence": 0.55
+    },
+    {
+      "tipo": "post_hoc",
+      "regex": "\\b(after\\s+\\S+\\s+happened|right\\s+after\\s+\\S+\\s+started|since\\s+\\S+\\s+everything\\s+has)\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "straw_man",
+      "regex": "\\b(basically\\s+saying\\s+that|what\\s+you\\s+(are\\s+saying|mean)\\s+is\\s+that|so\\s+according\\s+to\\s+you\\s+we\\s+should)\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "false_analogy",
+      "regex": "\\b(is\\s+like\\s+saying\\s+that|is\\s+exactly\\s+like|is\\s+identical\\s+to|comparable\\s+to)\\b",
+      "severita": 0.4,
+      "confidence": 0.4
+    },
+    {
+      "tipo": "circular_reasoning",
+      "regex": "\\b(because\\s+it\\s+is\\s+so|is\\s+true\\s+because|we\\s+know\\s+it\\s+is\\s+(true|correct))\\b",
+      "severita": 0.5,
+      "confidence": 0.45
+    },
+    {
+      "tipo": "red_herring",
+      "regex": "\\b(the\\s+real\\s+issue\\s+is|the\\s+point\\s+is\\s+different|changing\\s+the\\s+subject|rather\\s+(let's\\s+talk\\s+about|consider))\\b",
+      "severita": 0.45,
+      "confidence": 0.4
+    }
+  ]
+}

@@ -17,6 +17,7 @@ Output: list[Patologia(tipo=FALLACIA_LOGICA, dettaglio.fallacia_l2=<str>)].
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -24,11 +25,11 @@ from . import _nli
 from .annotazione import AnnotatedDoc
 from ..schemas import Patologia, TipoPatologia
 
+logger = logging.getLogger(__name__)
+_LESSICI_DIR = Path(__file__).parent.parent / "lessici"
 
-_PATTERNS_FILE = Path(__file__).parent.parent / "lessici" / "fallacy_patterns_it.json"
 
-
-# ─── tassonomia MAFALDA L2 → label italiano per zero-shot ────────────────────
+# ─── tassonomia MAFALDA L2 → label per zero-shot, per lingua ─────────────────
 
 MAFALDA_LABELS_IT = {
     "ad_hominem":           "attacco alla persona",
@@ -45,34 +46,68 @@ MAFALDA_LABELS_IT = {
     "false_analogy":        "falsa analogia",
     "equivocation":         "equivoco lessicale",
 }
+MAFALDA_LABELS_EN = {
+    "ad_hominem":           "ad hominem (personal attack)",
+    "ad_populum":           "ad populum (common belief)",
+    "ad_verecundiam":       "ad verecundiam (appeal to authority)",
+    "false_dilemma":        "false dilemma",
+    "hasty_generalization": "hasty generalization",
+    "post_hoc":             "post hoc (false cause)",
+    "slippery_slope":       "slippery slope",
+    "straw_man":            "straw man",
+    "appeal_to_emotion":    "appeal to emotion",
+    "red_herring":          "red herring",
+    "circular_reasoning":   "circular reasoning",
+    "false_analogy":        "false analogy",
+    "equivocation":         "equivocation",
+}
+_HYPOTHESIS_TEMPLATE_IT = "Questo argomento contiene la fallacia: {}."
+_HYPOTHESIS_TEMPLATE_EN = "This argument contains the fallacy: {}."
 
-
-_MARKER_RE = re.compile(
+_MARKER_RE_IT = re.compile(
     r"\b(quindi|perciò|pertanto|dunque|allora|poiché|poiche|giacché|"
     r"però|tuttavia|nondimeno|ciononostante|"
     r"sebbene|benché|nonostante|"
     r"ovviamente|certamente|chiaramente|evidentemente)\b",
     re.IGNORECASE,
 )
+_MARKER_RE_EN = re.compile(
+    r"\b(therefore|thus|hence|consequently|so|because|since|"
+    r"however|but|yet|nevertheless|nonetheless|"
+    r"although|though|obviously|certainly|clearly|evidently)\b",
+    re.IGNORECASE,
+)
+
+_PATTERNS_CACHE: dict[str, list] = {}
 
 
-def _load_patterns() -> list[dict]:
-    if not _PATTERNS_FILE.exists():
+def _load_patterns(lang: str) -> list[dict]:
+    patterns_file = _LESSICI_DIR / f"fallacy_patterns_{lang}.json"
+    if not patterns_file.exists():
         return []
-    data = json.loads(_PATTERNS_FILE.read_text(encoding="utf-8"))
-    return data.get("patterns", [])
+    try:
+        data = json.loads(patterns_file.read_text(encoding="utf-8"))
+        return data.get("patterns", [])
+    except Exception as exc:
+        logger.warning("errore nel caricamento fallacy_patterns_%s.json: %s", lang, exc)
+        return []
 
 
-_REGEX_PATTERNS = [
-    (re.compile(p["regex"], re.IGNORECASE | re.UNICODE), p)
-    for p in _load_patterns()
-]
+def _get_regex_patterns(lang: str) -> list[tuple]:
+    if lang not in _PATTERNS_CACHE:
+        _PATTERNS_CACHE[lang] = [
+            (re.compile(p["regex"], re.IGNORECASE | re.UNICODE), p)
+            for p in _load_patterns(lang)
+        ]
+    return _PATTERNS_CACHE[lang]
 
 
 def _regex_fallacies(testo: str) -> list[Patologia]:
+    from .. import config
+    lang = config.LANG.get()
     found: list[Patologia] = []
     seen_spans: set[tuple[int, int, str]] = set()
-    for regex, meta in _REGEX_PATTERNS:
+    for regex, meta in _get_regex_patterns(lang):
         for m in regex.finditer(testo):
             key = (m.start(), m.end(), meta["tipo"])
             if key in seen_spans:
@@ -86,7 +121,7 @@ def _regex_fallacies(testo: str) -> list[Patologia]:
                 dettaglio  = {
                     "fallacia_l2": meta["tipo"],
                     "match":       m.group(0),
-                    "fonte":       "regex_it",
+                    "fonte":       f"regex_{lang}",
                     "confermata":  True,            # regex ad alta precisione
                 },
                 origine_modulo = "fallacie",
@@ -97,30 +132,37 @@ def _regex_fallacies(testo: str) -> list[Patologia]:
 def _frasi_con_marker(doc: AnnotatedDoc) -> list[tuple[int, str]]:
     """Ritorna [(idx_frase, text)] solo per frasi che contengono marker
     argomentativi — riduce drasticamente il carico NLI."""
+    from .. import config
+    marker_re = _MARKER_RE_EN if config.LANG.get() == "en" else _MARKER_RE_IT
     out = []
     for i, s in enumerate(doc.sentences):
-        if _MARKER_RE.search(s.text):
+        if marker_re.search(s.text):
             out.append((i, s.text))
     return out
 
 
 def _nli_fallacies(doc: AnnotatedDoc, threshold: float = 0.55) -> list[Patologia]:
+    from .. import config
+    lang = config.LANG.get()
+    mafalda_labels = MAFALDA_LABELS_EN if lang == "en" else MAFALDA_LABELS_IT
+    hypothesis_template = _HYPOTHESIS_TEMPLATE_EN if lang == "en" else _HYPOTHESIS_TEMPLATE_IT
+
     candidati = _frasi_con_marker(doc)
     if not candidati:
         return []
     sequences = [c[1] for c in candidati]
-    labels    = list(MAFALDA_LABELS_IT.values())
+    labels    = list(mafalda_labels.values())
 
     results = _nli.classify_zero_shot(
         sequences           = sequences,
         labels              = labels,
-        hypothesis_template = "Questo argomento contiene la fallacia: {}.",
+        hypothesis_template = hypothesis_template,
         multi_label         = True,
     )
     if isinstance(results, dict):
         results = [results]
 
-    label_to_key = {v: k for k, v in MAFALDA_LABELS_IT.items()}
+    label_to_key = {v: k for k, v in mafalda_labels.items()}
 
     found: list[Patologia] = []
     for (idx_frase, testo_frase), res in zip(candidati, results):

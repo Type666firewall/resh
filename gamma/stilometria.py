@@ -37,20 +37,42 @@ def _load_lex(name: str) -> set[str]:
     return {ln.strip().lower() for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()}
 
 
-_CAUSALI    = _load_lex("connettivi_causali_it.txt")
-_AVVERSATIV = _load_lex("connettivi_avversativi_it.txt")
-_CONCESSIVI = _load_lex("connettivi_concessivi_it.txt")
+_STILO_LEX_IT = {
+    "modali":     {"potere", "dovere", "volere", "sapere"},    # lemma forms
+    "pron_1p":    {"io","me","mi","noi","ci","mio","mia","miei","mie","nostro","nostra","nostri","nostre"},
+    "pron_2p":    {"tu","te","ti","voi","vi","tuo","tua","tuoi","tue","vostro","vostra","vostri","vostre"},
+    "pron_3p":    {"egli","ella","esso","essa","essi","esse","lui","lei","loro","gli","le","si",
+                   "suo","sua","suoi","sue","loro"},
+    "nominaliz_suffix": ("zione", "mento", "tà", "ità", "ezza", "anza", "enza"),
+}
+_STILO_LEX_EN = {
+    "modali":     {"can", "could", "may", "might", "must", "shall", "should", "will", "would", "ought"},
+    "pron_1p":    {"i", "me", "my", "mine", "myself", "we", "us", "our", "ours", "ourselves"},
+    "pron_2p":    {"you", "your", "yours", "yourself", "yourselves"},
+    "pron_3p":    {"he", "him", "his", "himself", "she", "her", "hers", "herself",
+                   "it", "its", "itself", "they", "them", "their", "theirs", "themselves"},
+    "nominaliz_suffix": ("tion", "ment", "ity", "ness", "ism", "ance", "ence"),
+}
 
-_MODALI       = {"potere", "dovere", "volere", "sapere"}    # lemma forms
-_PRONOMI_1P   = {"io","me","mi","noi","ci","mio","mia","miei","mie","nostro","nostra","nostri","nostre"}
-_PRONOMI_2P   = {"tu","te","ti","voi","vi","tuo","tua","tuoi","tue","vostro","vostra","vostri","vostre"}
-_PRONOMI_3P   = {"egli","ella","esso","essa","essi","esse","lui","lei","loro","gli","le","si",
-                 "suo","sua","suoi","sue","loro"}
+_STILO_CACHE: dict[str, dict] = {}
 
-_NOMINALIZ_SUFFIX = ("zione", "mento", "tà", "ità", "ezza", "anza", "enza")
+
+def _get_stilo_lex() -> dict:
+    from .. import config
+    lang = config.LANG.get()
+    if lang not in _STILO_CACHE:
+        base = _STILO_LEX_EN if lang == "en" else _STILO_LEX_IT
+        _STILO_CACHE[lang] = {
+            **base,
+            "causali":    _load_lex(f"connettivi_causali_{lang}.txt"),
+            "avversativ": _load_lex(f"connettivi_avversativi_{lang}.txt"),
+            "concessivi": _load_lex(f"connettivi_concessivi_{lang}.txt"),
+        }
+    return _STILO_CACHE[lang]
 
 
 def profilo_stilistico(doc: AnnotatedDoc) -> dict:
+    lex = _get_stilo_lex()   # una volta per documento, non per token
     counts: Counter = Counter()
     n_token = 0
     n_frasi = max(1, len(doc.sentences))
@@ -75,14 +97,14 @@ def profilo_stilistico(doc: AnnotatedDoc) -> dict:
                 continue
             n_token += 1
 
-            if tok in _PRONOMI_1P:
+            if tok in lex["pron_1p"]:
                 counts["pron_1p"] += 1
-            elif tok in _PRONOMI_2P:
+            elif tok in lex["pron_2p"]:
                 counts["pron_2p"] += 1
-            elif tok in _PRONOMI_3P:
+            elif tok in lex["pron_3p"]:
                 counts["pron_3p"] += 1
 
-            if lemma in _MODALI and w.upos == "VERB":
+            if lemma in lex["modali"] and w.upos == "VERB":
                 counts["modali"] += 1
 
             if w.deprel in {"acl", "advcl", "ccomp", "xcomp", "acl:relcl"}:
@@ -91,14 +113,14 @@ def profilo_stilistico(doc: AnnotatedDoc) -> dict:
             if w.deprel == "aux:pass" or w.deprel == "nsubj:pass":
                 counts["passivi"] += 1
 
-            if w.upos == "NOUN" and any(tok.endswith(sfx) for sfx in _NOMINALIZ_SUFFIX):
+            if w.upos == "NOUN" and any(tok.endswith(sfx) for sfx in lex["nominaliz_suffix"]):
                 counts["nominalizzazioni"] += 1
 
-            if tok in _CAUSALI:
+            if tok in lex["causali"]:
                 counts["conn_causali"] += 1
-            elif tok in _AVVERSATIV:
+            elif tok in lex["avversativ"]:
                 counts["conn_avversativi"] += 1
-            elif tok in _CONCESSIVI:
+            elif tok in lex["concessivi"]:
                 counts["conn_concessivi"] += 1
 
     n_token = max(1, n_token)

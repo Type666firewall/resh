@@ -215,8 +215,16 @@ async def analizza_async(
     obiettivo_llm: bool = False,
     induttivo_llm: bool = False,
     verbose:       bool = False,
+    lang:          Optional[str] = None,
 ) -> RapportoResh:
-    """Pipeline asincrona — ritorna RapportoResh completo."""
+    """Pipeline asincrona — ritorna RapportoResh completo.
+
+    `lang`: se specificato, imposta la lingua per questa analisi (ContextVar
+    `config.LANG`, isolata per task asyncio — non tocca analisi concorrenti).
+    """
+    if lang is not None:
+        from . import config as _config
+        _config.LANG.set(lang)
 
     if verbose: logger.info("[1/4] Annotazione UD + encoding + chunking proposizionale...")
     doc = await _run_in_thread(annota, testo)
@@ -564,13 +572,15 @@ def genesi(rapporto: RapportoResh) -> list[dict]:
 # ─── wrapper sincrono (compat) ───────────────────────────────────────────────
 
 def analizza(testo: str, *, obiettivo_llm: bool = False,
-             induttivo_llm: bool = False, verbose: bool = True) -> RapportoResh:
+             induttivo_llm: bool = False, verbose: bool = True,
+             lang: Optional[str] = None) -> RapportoResh:
     """Pipeline sincrona — wraps `analizza_async` per retrocompatibilità.
 
     ADR-005: NON registrata in Λ (γ_analizza de-registrato — il metodo
     d'analisi è il solo γ_analizza_async); resta come comodità API."""
     return asyncio.run(analizza_async(testo, obiettivo_llm=obiettivo_llm,
-                                      induttivo_llm=induttivo_llm, verbose=verbose))
+                                      induttivo_llm=induttivo_llm, verbose=verbose,
+                                      lang=lang))
 
 
 # ─── stampa rapporto (output leggibile) ──────────────────────────────────────
