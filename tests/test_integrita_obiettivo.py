@@ -61,6 +61,10 @@ def _check_integrita(val, atteso) -> bool:
 
 
 def main(casi=CASI) -> int:
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")    # ↔/ε su console Windows cp1252
+    except (AttributeError, OSError):
+        pass
     fails, skipped = [], 0
     print("=" * 70)
     print("Batteria di contrasto integrita_obiettivo — O fallibile (dichiarato↔latente)")

@@ -91,6 +91,12 @@ resh parla con qualunque endpoint OpenAI-compatibile (`config.py`, profili in `P
 `gemma-31`) sono un buon default — gratuiti entro quota, qualità di giudizio sufficiente per
 l'arsenale critico.
 
+**Alibaba Model Studio** (profilo `alibaba`, default `qwen-plus`): 1M token gratuiti *per
+modello* alla registrazione. Servono `DASHSCOPE_API_KEY` e, se il workspace è nella regione
+eu-central-1 (Francoforte), anche l'endpoint personale:
+`DASHSCOPE_BASE_URL=https://<WorkspaceId>.eu-central-1.maas.aliyuncs.com/compatible-mode/v1`.
+Cambiare modello (`P3_LLM_MODEL=qwen-max`, ...) attinge alla quota free di quel modello.
+
 **Locale (LM Studio)**: profilo `local`, modello `"auto"` (autodetect di ciò che hai
 caricato). Due cose da sapere prima di lanciare:
 - **Precarica il modello a mano** in LM Studio prima di lanciare resh. L'autodetect legge lo

@@ -1,7 +1,9 @@
-# resh/ requirements — stack di riferimento (venv llama.cpp, verificato 2026-06-11).
-# Le versioni minime sotto sono QUELLE TESTATE: ε è riproducibile solo a parità
-# di stack (il rapporto ora registra le versioni in backend.ambiente).
-#   .venv/Scripts/python.exe -m pip install -r resh/requirements.txt
+# resh requirements — stack di riferimento TESTATO: ε è riproducibile solo a
+# parità di stack (il rapporto registra le versioni in backend.ambiente).
+# Per installare il package usare `pip install -e ".[full]"` (vedi pyproject.toml,
+# che replica queste versioni nell'extra [full]); questo file resta la fotografia
+# dello stack verificato:
+#   pip install -r requirements.txt
 #
 # Senza queste, il package degrada gracefully (e il rapporto lo dichiara con
 # backend.eps_degradato=True):

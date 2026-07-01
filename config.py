@@ -70,6 +70,8 @@ API_KEYS = {
     "deepseek":  os.getenv("DEEPSEEK_API_KEY", ""),
     "groq":      os.getenv("GROQ_API_KEY", ""),
     "openrouter": os.getenv("OPENROUTER_API_KEY", ""),
+    # Alibaba Cloud Model Studio (DashScope) — 1M token free per modello alla registrazione.
+    "alibaba":   os.getenv("DASHSCOPE_API_KEY", "") or _KEYS_LOCAL.get("alibaba", ""),
     # Backend locali: nessuna chiave reale richiesta.
     "local":     "lm-studio",
 }
@@ -83,6 +85,11 @@ ENDPOINTS = {
     "openrouter": "https://openrouter.ai/api/v1",
     "lmstudio":   os.getenv("P3_LMSTUDIO_URL", "http://127.0.0.1:1234/v1"),
     "llamacpp":   os.getenv("P3_LLAMACPP_URL", "http://127.0.0.1:8080/v1"),
+    # Alibaba Model Studio. Default: Singapore (intl). La regione eu-central-1
+    # (Francoforte) usa un endpoint PERSONALE col Workspace ID — impostarlo via env:
+    #   DASHSCOPE_BASE_URL=https://<WorkspaceId>.eu-central-1.maas.aliyuncs.com/compatible-mode/v1
+    "alibaba":    os.getenv("DASHSCOPE_BASE_URL",
+                            "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"),
 }
 
 
@@ -168,6 +175,14 @@ PROFILES = {
     "llamacpp":    Profile("llamacpp", "local", ENDPOINTS["llamacpp"], "auto",
                            max_tokens=4096, context=8192, timeout=600,
                            note="llama.cpp server locale"),
+
+    # ── Alibaba Cloud Model Studio (DashScope, 1M token free/modello) ─────────
+    # Workhorse per generare i report di esempio. Richiede DASHSCOPE_API_KEY.
+    # Altri modelli via P3_LLM_MODEL (qwen-max, qwen-flash, ...): la quota free
+    # è PER MODELLO, quindi cambiare modello = nuovo milione di token.
+    "alibaba":     Profile("alibaba", "alibaba", ENDPOINTS["alibaba"], "qwen-plus",
+                           max_tokens=4096, reasoning=None, context=131_072, rpm=30,
+                           note="DashScope intl — qwen-plus non-thinking; override modello via P3_LLM_MODEL"),
 
     # ── Provider a pagamento (attivi quando la chiave è presente) ─────────────
     "openai":      Profile("openai", "openai", ENDPOINTS["openai"], "gpt-4o-mini",

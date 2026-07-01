@@ -380,6 +380,9 @@ def main(argv: list[str] | None = None) -> int:
     rapporto = analizza(testo, induttivo_llm=args.induttivo, verbose=not args.quiet,
                         lang=args.lang)
 
+    if args.quiet:
+        print(f"ε_ऋ = {rapporto.eps_resh:.4f}")
+
     if args.file:
         esito = save_run(rapporto, file_path=p)
         if not args.quiet:

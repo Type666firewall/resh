@@ -12,6 +12,7 @@ name = "resh"
 version = "0.1.0"
 description = "ऋ (resh) — analisi critico-epistemica di testi: fallacie, premesse occultate, patologie argomentative, punteggio riproducibile ε_ऋ"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 authors = [{ name = "Type666firewall" }]
 keywords = ["epistemology", "argumentation", "fallacies", "nlp", "philosophy"]
