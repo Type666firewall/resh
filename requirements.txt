@@ -19,6 +19,7 @@ torch>=2.11.0               # CVE-2025-32434: torch.load safe richiede 2.6+; tes
 scikit-learn>=1.9.0         # trascinata da bertopic 2026-06-11; ε verificata invariata
 numpy>=2.2.6
 bertopic>=0.17.4            # drift tematico in coerenza.py (installato nel venv 2026-06-11)
+openai>=1.0.0               # client OpenAI-compatibile usato da config.py per LM Studio/llama.cpp/Groq
 
 # simpful RIMOSSO (ADR-005 2026-06-12): fuzzy_logic.py in trash, fascia densità
 # a soglie fisse in core (stesso output del fallback lineare che girava da sempre).
