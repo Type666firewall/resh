@@ -6,10 +6,6 @@ TUTTA la genesi, TUTTE le patologie, TUTTI i rilievi di ogni asse, Trilemma +
 confronto det/ind, Inclosura, termini astratti, e — quotata com'è — la sintesi
 Δε del SISTEMA. Stampa in testa provenienza+scope (fonte, lingua, n caratteri).
 
-Questo NON è "il report con voce" (una sintesi narrativa/editoriale è fuori
-scope per questo modulo). È il grezzo reso leggibile, pensato per l'ispezione
-diretta. Nessuna frase è aggiunta dal formatter: se non è nei dati, non compare.
-
 Firma dict-based (stessa forma di tests/_report_output.json), così è invocabile
 sia dagli oggetti (`.as_dict()`/serializzazione) sia dal JSON salvato.
 """
@@ -19,115 +15,205 @@ from __future__ import annotations
 from typing import Optional
 
 
+_COMP_LABELS = {
+    "trasparenza_premesse":     "Trasparenza premesse",
+    "validita_formale":         "Validità formale (sequitur)",
+    "assenza_fallacie":         "Assenza fallacie",
+    "struttura_argomentativa":  "Struttura argomentativa",
+    "coesione_semantica":       "Coesione semantica",
+    "coerenza_tematica":        "Coerenza tematica",
+    "qualita_sintattica":       "Qualità sintattica",
+    "bias_linguistico":         "Bias linguistico",
+    "credibilita_fonte":        "Credibilità fonte",
+    "integrita_obiettivo":      "Integrità obiettivo",
+}
+
+_ASSE_LABELS = {
+    "asse_1_osservatore":       "Posizione dell'osservatore",
+    "asse_2_autoreferenza":     "Autoreferenzialità",
+    "asse_3_autosufficienza":   "Autosufficienza semantica",
+    "contrasto":                "Contrasto interno",
+    "r0":  "Dubbio come metodo (r0)",
+    "r0p": "Dubbio come postura (r0')",
+    "r1":  "Catene di giustificazione (r1)",
+    "r2":  "Presupposti non dichiarati (r2)",
+    "r3":  "Autorità e fonti (r3)",
+    "r4":  "Coerenza interna (r4)",
+    "r5":  "Circolarità argomentativa (r5)",
+    "r6":  "Disqualificazione del dissenso (r6)",
+    "r7":  "Universalità non giustificata (r7)",
+    "r8":  "Naturalizzazione (r8)",
+    "r9":  "Immunizzazione (r9)",
+}
+
+_CORNO_LABELS = {
+    "C1": "C1 — Regresso infinito",
+    "C2": "C2 — Circolarità (petitio principii)",
+    "C3": "C3 — Arresto dogmatico",
+}
+
+
+def _fascia_eps(eps) -> str:
+    if eps is None:
+        return ""
+    try:
+        v = float(eps)
+    except (TypeError, ValueError):
+        return ""
+    if v >= 0.85:
+        return "alta"
+    if v >= 0.65:
+        return "media"
+    if v >= 0.40:
+        return "bassa"
+    return "critica"
+
+
+def _bar(val, width=20) -> str:
+    try:
+        v = float(val)
+    except (TypeError, ValueError):
+        return ""
+    filled = round(v * width)
+    return "█" * filled + "░" * (width - filled)
+
+
 def _sec(titolo: str) -> str:
     return f"\n## {titolo}\n"
 
 
 def _render_det(det: dict) -> list[str]:
-    out = [_sec("Lato deterministico — ε_resh")]
+    out = [_sec("Lato deterministico — epsilon")]
     if "errore" in det:
-        out.append(f"⚠ deterministico non disponibile: {det['errore']}")
+        out.append(f"⚠ Deterministico non disponibile: {det['errore']}")
         return out
     eps = det.get("eps_resh")
-    out.append(f"**ε_resh = {eps}**  ·  fascia densità: {det.get('fascia_densita')}  ·  "
-               f"densità logica: {det.get('densita_logica')}")
+    fascia = _fascia_eps(eps)
+    out.append(f"**ε = {eps}** (tenuta epistemica: {fascia})")
+    out.append(f"Densità logica: {det.get('densita_logica')} — fascia: {det.get('fascia_densita')}")
     comp = det.get("componenti_epsilon", {})
     if comp:
-        out.append("\n**Componenti** (valore grezzo, nessuna interpretazione):")
+        out.append("\n### Componenti epsilon\n")
+        out.append("| Componente | Valore | Barra |")
+        out.append("|---|---|---|")
         for k, v in comp.items():
-            out.append(f"- {k}: {v}")
+            label = _COMP_LABELS.get(k, k)
+            v_str = f"{v:.3f}" if isinstance(v, (int, float)) else str(v)
+            bar = _bar(v)
+            out.append(f"| {label} | {v_str} | {bar} |")
     gen = det.get("genesi", [])
     if gen:
-        out.append("\n**Genesi** (componenti ordinati per erosione di ε; cause allegate):")
+        out.append("\n### Genesi (componenti ordinati per erosione di epsilon)\n")
         for g in gen:
             if not isinstance(g, dict):
                 out.append(f"- {g}")
                 continue
-            riga = (f"- {g.get('componente')}: valore {g.get('valore')}, peso {g.get('peso')}, "
-                    f"erosione {g.get('erosione')}")
+            comp_label = _COMP_LABELS.get(g.get("componente", ""), g.get("componente", ""))
+            riga = f"- **{comp_label}**: valore {g.get('valore')}, peso {g.get('peso')}, erosione {g.get('erosione')}"
             out.append(riga)
             for c in g.get("cause", []) or []:
-                out.append(f"    · causa [{c.get('tipo')}] sev {c.get('severita')} — "
-                           f"{c.get('dettaglio', {})}")
+                det_info = c.get("dettaglio", {})
+                det_str = ", ".join(f"{dk}={dv}" for dk, dv in det_info.items()) if isinstance(det_info, dict) else str(det_info)
+                out.append(f"    - [{c.get('tipo')}] severità {c.get('severita')} — {det_str}")
     pat = det.get("patologie", [])
-    out.append(f"\n**Patologie ({len(pat)})**:")
-    out += [f"- {p}" for p in pat] or ["- (nessuna)"]
+    out.append(f"\n### Patologie rilevate ({len(pat)})\n")
+    if pat:
+        for p in pat:
+            out.append(f"- {p}")
+    else:
+        out.append("Nessuna patologia rilevata.")
     return out
 
 
 def _render_ind(ind: dict) -> list[str]:
-    out = [_sec("Lato induttivo — arsenale ऋ")]
+    out = [_sec("Lato induttivo — analisi critica (LLM)")]
     if "errore" in ind:
-        out.append(f"⚠ induttivo non disponibile: {ind['errore']}")
+        out.append(f"⚠ Induttivo non disponibile: {ind['errore']}")
         return out
     o = ind.get("obiettivo")
     if o:
-        out.append(f"**Obiettivo O dell'agente** — dichiarato: «{o.get('dichiarato')}»")
+        out.append("### Obiettivo dell'agente\n")
+        out.append(f"- **Dichiarato:** «{o.get('dichiarato')}»")
         if o.get("latente"):
-            out.append(f"  · latente: «{o.get('latente')}»")
-        out.append(f"  · coerenza teleologica: {o.get('coerenza')}")
+            out.append(f"- **Latente:** «{o.get('latente')}»")
+        out.append(f"- **Coerenza teleologica:** {o.get('coerenza')}")
     ars = ind.get("arsenale") or {}
     if ars and "errore" not in ars:
-        out.append("\n**Arsenale Critico:**")
+        out.append("\n### Arsenale critico\n")
         for k in ("asse_1_osservatore", "asse_2_autoreferenza", "asse_3_autosufficienza", "contrasto"):
             if ars.get(k):
-                out.append(f"- *{k}*: {ars[k]}")
+                label = _ASSE_LABELS.get(k, k)
+                out.append(f"**{label}:** {ars[k]}\n")
     assi = ind.get("assi") or {}
     if assi:
-        out.append("\n**Assi ऋ** (tutti i rilievi, non selezionati):")
+        out.append("\n### Assi di analisi\n")
         for aid, a in assi.items():
+            label = _ASSE_LABELS.get(aid, aid)
             if not isinstance(a, dict) or "errore" in a:
-                out.append(f"- {aid}: ⚠ {a.get('errore') if isinstance(a, dict) else a}")
+                err = a.get("errore") if isinstance(a, dict) else a
+                out.append(f"**{label}:** ⚠ {err}\n")
                 continue
-            out.append(f"- **{aid}**:")
+            out.append(f"**{label}:**")
             for r in a.get("rilievi", []):
-                out.append(f"    · {r}")
+                out.append(f"- {r}")
             if a.get("nota"):
-                out.append(f"    nota: {a['nota']}")
+                out.append(f"  *Nota:* {a['nota']}")
+            out.append("")
     tri = ind.get("trilemma") or {}
     if tri:
         llm = tri.get("llm", tri) if isinstance(tri, dict) else {}
-        out.append("\n**Trilemma di Münchhausen:**")
+        out.append("\n### Trilemma di Münchhausen\n")
+        out.append("> Ogni catena di giustificazione termina in uno di tre modi: "
+                   "regresso infinito (C1), circolarità (C2), o arresto dogmatico (C3).\n")
         if "errore" in tri:
-            out.append(f"- ⚠ {tri['errore']}")
+            out.append(f"⚠ {tri['errore']}")
         else:
-            out.append(f"- corno: {llm.get('corno')} · sottotipo: {llm.get('sottotipo')} · "
-                       f"modo: {llm.get('modo')} · target: {llm.get('target')} · "
-                       f"polarità: {llm.get('polarita')}")
+            corno = llm.get("corno", "?")
+            corno_label = _CORNO_LABELS.get(corno, corno)
+            out.append(f"- **Corno dominante:** {corno_label}")
+            if llm.get("sottotipo"):
+                out.append(f"- **Sottotipo:** {llm['sottotipo']}")
+            if llm.get("modo"):
+                out.append(f"- **Modo:** {llm['modo']}")
             if llm.get("descrizione_catena"):
-                out.append(f"- catena: {llm['descrizione_catena']}")
+                out.append(f"- **Catena:** {llm['descrizione_catena']}")
             if llm.get("c3_strumentale_diagnostico"):
-                out.append(f"- C₃ strumentale dichiarato in diagnosi: {llm['c3_strumentale_diagnostico']}")
+                out.append(f"- **C3 strumentale:** {llm['c3_strumentale_diagnostico']}")
             conf = tri.get("confronto")
             if conf:
-                out.append(f"- confronto det↔ind: convergenze {conf.get('convergenze')} · "
-                           f"divergenze {conf.get('divergenze')} · pre-hit det: {conf.get('n_pre_hits')}")
+                out.append(f"- Confronto deterministico/induttivo: "
+                           f"convergenze {len(conf.get('convergenze', []))}, "
+                           f"divergenze {len(conf.get('divergenze', []))}")
     inc = ind.get("inclosura") or {}
     if inc and "errore" not in inc:
         llm = inc.get("llm", {})
-        out.append("\n**Inclosura (Schema di Priest):**")
-        out.append(f"- forma: {inc.get('forma')} · modo: {inc.get('modo')} · "
-                   f"risposta al limite: {inc.get('risposta_al_limite')}")
+        out.append("\n### Inclosura (Schema di Priest)\n")
+        out.append("> L'inclosura rileva se il testo affronta un limite del pensiero "
+                   "e come risponde: trascendenza, chiusura, o dialettica.\n")
+        out.append(f"- **Forma:** {inc.get('forma')}")
+        if inc.get("modo"):
+            out.append(f"- **Modo:** {inc.get('modo')}")
         if llm.get("omega"):
-            out.append(f"- Ω: {llm.get('omega')}")
+            out.append(f"- **Omega (limite):** {llm.get('omega')}")
         if llm.get("nota"):
-            out.append(f"- nota: {llm.get('nota')}")
+            out.append(f"- *{llm.get('nota')}*")
     mf = ind.get("malafede_o") or {}
     if mf:
-        out.append("\n**Malafede del nodo O (scarto dichiarato↔latente — segnale, non verdetto):**")
+        out.append("\n### Diagnosi malafede (scarto dichiarato/latente)\n")
+        out.append("> Segnale, non verdetto: un fine egoistico non rende cattivo il prodotto.\n")
         if "errore" in mf:
-            out.append(f"- ⚠ {mf['errore']}")
+            out.append(f"⚠ {mf['errore']}")
         elif "non_applicabile" in mf:
-            out.append(f"- non applicabile: {mf['non_applicabile']}")
+            out.append(f"Non applicabile: {mf['non_applicabile']}")
         else:
-            out.append(f"- intento: {mf.get('intento')} · grado: {mf.get('grado')}")
+            out.append(f"- **Intento:** {mf.get('intento')} — **Grado:** {mf.get('grado')}")
             for r in mf.get("rilievi", []):
-                out.append(f"    · {r}")
+                out.append(f"- {r}")
             if mf.get("nota"):
-                out.append(f"- nota: {mf['nota']}")
+                out.append(f"  *{mf['nota']}*")
     sint = ind.get("sintesi")
     if sint:
-        out.append("\n**Sintesi Δε (giudizio del SISTEMA — LLM, prompt versionato; non del formatter):**")
+        out.append("\n### Sintesi (giudizio del sistema)\n")
         out.append(f"> {sint}")
     return out
 
@@ -139,7 +225,7 @@ def _render_astratti(astr: dict) -> list[str]:
         return out
     diag = astr.get("diagnosi", {})
     if not diag:
-        out.append("- (nessun candidato)")
+        out.append("Nessun candidato rilevato.")
         return out
     for termine, d in diag.items():
         out.append(f"- **{termine}** → {d.get('occultamento')}: {d.get('motivo')}")
@@ -147,94 +233,89 @@ def _render_astratti(astr: dict) -> list[str]:
 
 
 def genera_report_documento(rap_doc, *, run_uid: str = "") -> str:
-    """Rende un RapportoDocumento (dataclass o .as_dict()) in markdown. Scope=paper, zero giudizio.
-
-    `run_uid`: firma Ψ del run persistito (persistenza.save_run_documento) —
-    stampata in intestazione, così ogni report risale al suo dato nel DB."""
     if hasattr(rap_doc, "as_dict"):
         rap_doc = rap_doc.as_dict()
     meta = rap_doc.get("meta", {})
     O = rap_doc.get("obiettivo") or {}
     saltati = rap_doc.get("saltati") or []
-    head = [
-        "# Report ऋ — DOCUMENTO (grezzo, formatter deterministico)",
-        "",
-        f"**Fonte:** {rap_doc.get('fonte','?')}  ·  **lingua:** {rap_doc.get('lingua')}  ·  "
-        f"**chunk:** {rap_doc.get('n_chunk')}  ·  **modello:** {meta.get('model')}  ·  "
-        f"**assi/chunk:** {meta.get('assi_chunk')}  ·  **call:** {meta.get('call_eseguite')}  ·  {meta.get('ts')}"
-        + (f"  ·  **run:** `{run_uid}`" if run_uid else ""),
-        "",
-        "> Rendering deterministico, scope=intero documento. Nessuna selezione/giudizio; "
-        "la sintesi è del sistema (LLM).",
-    ]
-    if saltati:
-        head.append(f"\n⚠ **chunk SALTATI per budget** (non analizzati, ripristinabili al resume): {saltati}")
-    parti = head
-    parti.append(_sec("Obiettivo O dell'agente (globale)"))
-    if "errore" in O:
-        parti.append(f"⚠ {O['errore']}")
-    else:
-        parti.append(f"- dichiarato: «{O.get('dichiarato')}»")
-        if O.get("latente"):
-            parti.append(f"- latente: «{O.get('latente')}»")
-    parti.append(_sec("ε aggregata (deterministico)"))
-    parti.append(f"**ε_doc = {rap_doc.get('eps_doc')}** (media geometrica pesata per lunghezza chunk)")
-    parti.append("\nε per chunk:")
-    for e in rap_doc.get("eps_per_chunk", []):
-        parti.append(f"- chunk {e.get('id')} [{e.get('loc')}]: ε={e.get('eps')} ({e.get('char')} char)")
-    parti.append(_sec("Diagnosi per chunk (note di sintesi)"))
-    for c in rap_doc.get("chunk", []):
-        parti.append(f"- **chunk {c.get('id')}** [{c.get('loc')}] «{(c.get('titolo') or '')[:50]}»: "
-                     f"{c.get('nota_sintesi','')}")
+    eps_doc = rap_doc.get("eps_doc")
     sd = rap_doc.get("sintesi_doc")
+
+    head = [
+        "# Report resh — Analisi documento",
+        "",
+        f"**Fonte:** {rap_doc.get('fonte','?')}  ·  **Lingua:** {rap_doc.get('lingua')}  ·  "
+        f"**Chunk:** {rap_doc.get('n_chunk')}  ·  **Modello:** {meta.get('model')}  ·  "
+        f"**Call LLM:** {meta.get('call_eseguite')}  ·  {meta.get('ts')}"
+        + (f"  ·  **Run:** `{run_uid}`" if run_uid else ""),
+        "",
+    ]
+
+    # Executive summary in testa
+    head.append("## Riepilogo\n")
+    fascia = _fascia_eps(eps_doc)
+    head.append(f"**Epsilon documento: {eps_doc}** (tenuta epistemica: {fascia})")
+    if O and "errore" not in O:
+        head.append(f"\n**Obiettivo:** «{O.get('dichiarato', '?')}»")
     if sd:
-        parti.append(_sec("Sintesi Δε del DOCUMENTO (giudizio del SISTEMA — LLM, prompt versionato)"))
-        parti.append(f"> {sd}")
+        head.append(f"\n**Sintesi:** {sd}")
+    if saltati:
+        head.append(f"\n⚠ **Chunk saltati per budget:** {saltati} (ripristinabili al resume)")
+
+    parti = head
+
+    parti.append(_sec("Epsilon per chunk"))
+    for e in rap_doc.get("eps_per_chunk", []):
+        e_val = e.get("eps")
+        bar = _bar(e_val) if e_val else ""
+        parti.append(f"- Chunk {e.get('id')} [{e.get('loc')}]: ε={e_val} {bar} ({e.get('char')} char)")
+
+    parti.append(_sec("Diagnosi per chunk"))
+    for c in rap_doc.get("chunk", []):
+        nota = c.get("nota_sintesi", "")
+        parti.append(f"\n**Chunk {c.get('id')}** [{c.get('loc')}] «{(c.get('titolo') or '')[:50]}»\n")
+        if " | " in nota:
+            for part in nota.split(" | "):
+                parti.append(f"- {part.strip()}")
+        else:
+            parti.append(f"- {nota}")
+
     return "\n".join(parti) + "\n"
 
 
 def _render_quadro(quadro: dict) -> list[str]:
-    """Sezione QuadroEpsilon: det ∥ ind a parità, zero giudizio del formatter."""
-    out = [_sec("Quadro ε (det ∥ ind — parità di ruolo, nessuna fusione)")]
+    out = [_sec("Quadro epsilon (deterministico e induttivo a confronto)")]
     eps = quadro.get("eps_resh")
-    out.append(f"**ε_ऋ = {eps}** (verbatim dal deterministico — i giudizi induttivi "
-               "AFFIANCANO, non modulano)")
+    out.append(f"**ε = {eps}** (dal lato deterministico — il lato induttivo affianca, non modula)")
 
     cop = quadro.get("copertura") or {}
     if cop:
-        out.append("\n**Provenienza componenti (da Λ, `eps_feeds`):**")
-        out.append("| componente | valore | γ alimentanti |")
+        out.append("\n### Provenienza componenti\n")
+        out.append("| Componente | Valore | Moduli |")
         out.append("|---|---|---|")
         comp = quadro.get("componenti") or {}
         for c, gammas in cop.items():
+            label = _COMP_LABELS.get(c, c)
             v = comp.get(c)
             v_str = f"{v:.4f}" if isinstance(v, (int, float)) else "— (escluso)"
-            out.append(f"| `{c}` | {v_str} | {', '.join(gammas) or '⚠ NESSUNO'} |")
+            out.append(f"| {label} | {v_str} | {', '.join(gammas) or '⚠ nessuno'} |")
 
     giudizi = quadro.get("giudizi_parita") or []
     if giudizi:
-        out.append("\n**Giudizi a parità (non entrano in ε):**")
+        out.append("\n### Giudizi a parità (non entrano in epsilon)\n")
         for c in giudizi:
             stato = c.get("salute")
             extra = f" — {c.get('motivo_scarto')}" if c.get("motivo_scarto") else ""
-            out.append(f"- `{c.get('sotto_unita')}` [{stato}]{extra}")
-
-    usati_ind = quadro.get("contributi_ind") or []
-    if usati_ind:
-        ok_ids = [c.get("sotto_unita") for c in usati_ind if c.get("usato")]
-        ass_ids = [c.get("sotto_unita") for c in usati_ind if c.get("salute") == "assente"]
-        out.append(f"\n**Contributi induttivi:** usati: {ok_ids or '—'}"
-                   + (f" · assenti: {ass_ids}" if ass_ids else ""))
+            label = _ASSE_LABELS.get(c.get("sotto_unita", ""), c.get("sotto_unita", ""))
+            out.append(f"- {label} [{stato}]{extra}")
 
     n_sc = quadro.get("n_scartati", 0)
     if n_sc:
-        out.append(f"\n⚠ **Contributi SCARTATI: {n_sc}** (scarto binario, contati — mai pesati):")
+        out.append(f"\n⚠ **Contributi scartati: {n_sc}**")
         for c in quadro.get("scartati") or []:
-            out.append(f"- `{c.get('sotto_unita') or c.get('gamma')}` "
-                       f"[{c.get('salute')}]: {c.get('motivo_scarto')}")
-    anomalie = (quadro.get("meta") or {}).get("anomalie_copertura")
-    if anomalie:
-        out.append(f"\n⚠ **Anomalia copertura Λ:** componenti senza γ alimentante: {anomalie}")
+            su = c.get("sotto_unita") or c.get("gamma")
+            label = _ASSE_LABELS.get(su, su)
+            out.append(f"- {label} [{c.get('salute')}]: {c.get('motivo_scarto')}")
     return out
 
 
@@ -242,23 +323,32 @@ def genera_report(det: Optional[dict] = None, ind: Optional[dict] = None,
                   astratti: Optional[dict] = None, *, fonte: str = "",
                   lingua: str = "", testo: str = "", model: str = "",
                   ts: str = "", run_uid: str = "", quadro: Optional[dict] = None) -> str:
-    """Rende il grezzo (det/ind/astratti) in markdown. Nessun giudizio aggiunto.
-
-    `fonte`/`lingua`/`testo` stampano provenienza+scope in intestazione (così lo
-    scope — es. "abstract" vs "paper intero" — è inchiodato, non vago)."""
     n_arg = (det or {}).get("n_argomenti")
+    eps = (det or {}).get("eps_resh")
+    fascia = _fascia_eps(eps)
+
     head = [
-        "# Report ऋ (grezzo, formatter deterministico)",
+        "# Report resh — Analisi epistemica",
         "",
-        f"**Fonte:** {fonte or '?'}  ·  **lingua:** {lingua or '?'}  ·  "
-        f"**input:** {len(testo)} caratteri" + (f"  ·  **argomenti:** {n_arg}" if n_arg is not None else "")
-        + (f"  ·  **modello LLM:** {model}" if model else "")
-        + (f"  ·  **run:** `{run_uid}`" if run_uid else "")
+        f"**Fonte:** {fonte or '?'}  ·  **Lingua:** {lingua or '?'}  ·  "
+        f"**Input:** {len(testo)} caratteri" + (f"  ·  **Argomenti:** {n_arg}" if n_arg is not None else "")
+        + (f"  ·  **Modello LLM:** {model}" if model else "")
+        + (f"  ·  **Run:** `{run_uid}`" if run_uid else "")
         + (f"  ·  {ts}" if ts else ""),
         "",
-        "> Rendering deterministico: nessuna selezione né interpretazione. "
-        "L'unico giudizio è la sintesi Δε del sistema, quotata verbatim.",
     ]
+
+    # Executive summary
+    if eps is not None:
+        head.append("## Riepilogo\n")
+        head.append(f"**Epsilon: {eps}** (tenuta epistemica: {fascia})")
+        pat = (det or {}).get("patologie", [])
+        if pat:
+            head.append(f"  ·  Patologie rilevate: {len(pat)}")
+        sint = (ind or {}).get("sintesi")
+        if sint:
+            head.append(f"\n**Sintesi:** {sint}")
+
     parti = head
     if det is not None:
         parti += _render_det(det)

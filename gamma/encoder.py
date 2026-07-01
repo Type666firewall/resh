@@ -49,47 +49,51 @@ def _active_dim() -> int:
     return _HASH_DIM
 
 
+import threading
+_LOAD_LOCK = threading.Lock()
+
 def _try_load_model():
     global _MODEL, _MODEL_NAME, _MODEL_DIM
     if _MODEL is not None:
         return _MODEL
-    try:
-        from sentence_transformers import SentenceTransformer  # noqa: F401
+    with _LOAD_LOCK:
+        if _MODEL is not None:
+            return _MODEL
         try:
-            import torch
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        except Exception:
-            device = "cpu"
-
-        name = os.getenv("P3_RESH_ENCODER_MODEL", DEFAULT_MODEL)
-        # ml_registry: usa lo stesso slot di bge-m3 se è quel modello
-        try:
-            from ml_registry import acquire as _ml_acquire
-            _ml_acquire("bge-m3" if "bge" in name.lower() else "sentence-transformer-other")
-        except Exception:
-            pass
-        try:
-            _MODEL = SentenceTransformer(name, device=device)
-        except Exception as exc_primary:
-            print(f"[resh.encoder] primary {name} failed: {exc_primary} — fallback {FALLBACK_MODEL}")
-            _MODEL = SentenceTransformer(FALLBACK_MODEL, device=device)
-            name = FALLBACK_MODEL
-
-        if device == "cuda":
+            from sentence_transformers import SentenceTransformer  # noqa: F401
             try:
-                _MODEL.half()    # FP16
+                import torch
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+            except Exception:
+                device = "cpu"
+
+            name = os.getenv("P3_RESH_ENCODER_MODEL", DEFAULT_MODEL)
+            try:
+                from ml_registry import acquire as _ml_acquire
+                _ml_acquire("bge-m3" if "bge" in name.lower() else "sentence-transformer-other")
             except Exception:
                 pass
+            try:
+                _MODEL = SentenceTransformer(name, device=device)
+            except Exception as exc_primary:
+                print(f"[resh.encoder] primary {name} failed: {exc_primary} — fallback {FALLBACK_MODEL}")
+                _MODEL = SentenceTransformer(FALLBACK_MODEL, device=device)
+                name = FALLBACK_MODEL
 
-        _MODEL_NAME = name
-        # API rinominata in sentence-transformers recenti; getattr copre entrambe
-        _get_dim = getattr(_MODEL, "get_embedding_dimension", None) or _MODEL.get_sentence_embedding_dimension
-        _MODEL_DIM  = _get_dim()
-        return _MODEL
-    except Exception as exc:
-        print(f"[resh.encoder] sentence-transformers non disponibile, fallback hash: {exc}")
-        _MODEL = False        # sentinel: tried+failed
-        return None
+            if device == "cuda":
+                try:
+                    _MODEL.half()    # FP16
+                except Exception:
+                    pass
+
+            _MODEL_NAME = name
+            _get_dim = getattr(_MODEL, "get_embedding_dimension", None) or _MODEL.get_sentence_embedding_dimension
+            _MODEL_DIM  = _get_dim()
+            return _MODEL
+        except Exception as exc:
+            print(f"[resh.encoder] sentence-transformers non disponibile, fallback hash: {exc}")
+            _MODEL = False        # sentinel: tried+failed
+            return None
 
 
 def _hash_encode(text: str, dim: int) -> np.ndarray:

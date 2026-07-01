@@ -1,6 +1,6 @@
 # Report ऋ — DOCUMENTO (grezzo, formatter deterministico)
 
-**Fonte:** resh_prova_22_06_26.txt  ·  **lingua:** None  ·  **chunk:** 4  ·  **modello:** gemma-4-31b-it  ·  **assi/chunk:** ALL (arsenale_completo)  ·  **call:** 56  ·  2026-06-22T13:15:19  ·  **run:** `Ψ_b8777a8a8b2f_D001`
+**Fonte:** Graham Priest - Beyond the Limits of Thought.txt  ·  **lingua:** None  ·  **chunk:** 4  ·  **modello:** gemma-4-31b-it  ·  **assi/chunk:** ALL (arsenale_completo)  ·  **call:** 56  ·  2026-06-22T13:15:19  ·  **run:** `Ψ_b8777a8a8b2f_D001`
 
 > Rendering deterministico, scope=intero documento. Nessuna selezione/giudizio; la sintesi è del sistema (LLM).
 

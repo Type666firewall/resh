@@ -108,7 +108,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         )
         tel = rapporto.teleologia
         ind = rapporto.induttivo
-        llm_ok = None if ind is None else "errore" not in (ind.get("llm", {}) if isinstance(ind, dict) else {})
+        llm_ok = None if ind is None else ("errore" not in ind)
         risultato = {
             "eps_resh": rapporto.eps_resh,
             "componenti": rapporto.componenti_epsilon,

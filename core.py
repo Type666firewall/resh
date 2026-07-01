@@ -71,7 +71,7 @@ calcola_epsilon             = resolve(G.CALCOLA_EPSILON)
 # via config `[resh.sequitur].peso_epsilon`.
 def _peso_sequitur() -> float:
     try:
-        from config import CONFIG
+        from .config import CONFIG
         seq = getattr(getattr(CONFIG, "resh", None), "sequitur", None)
         v = getattr(seq, "peso_epsilon", None)
         if isinstance(v, (int, float)):
@@ -298,14 +298,21 @@ async def analizza_async(
     verifiche: list[VerificaLogica] = []
     fallacy_spans = [(p.span_char, p.dettaglio.get("fallacia_l2", "?"))
                      for p in fallacie_pats if p.span_char]
+    testo_lower = testo.lower()
     for a in argomenti:
         fallacia = None
+        chiave = (a.testo or "")[:60].lower()
+        posizioni: list[int] = []
+        if chiave:
+            pos = testo_lower.find(chiave)
+            while pos != -1:
+                posizioni.append(pos)
+                pos = testo_lower.find(chiave, pos + 1)
         for span, name in fallacy_spans:
-            if span and a.testo and name and a.testo[:120].lower() in testo.lower():
-                # match grossolano: stessa porzione
-                if span[0] <= testo.lower().find(a.testo[:60].lower()) <= span[1] + 200:
-                    fallacia = name
-                    break
+            # match grossolano: una qualunque occorrenza dell'argomento nella porzione
+            if span and name and any(span[0] <= p <= span[1] + 200 for p in posizioni):
+                fallacia = name
+                break
         is_ns = a.testo[:200] in ns_args
         if fallacia:
             nota = "auto-derived from fallacy module"
@@ -332,7 +339,11 @@ async def analizza_async(
     # non-sequitur «pulito» (entimema / C₃) è invalido pur senza fallacia nominata;
     # un argomento valido può essere fallace. Due componenti distinti, non fusi.
     penalita_seq     = PESO_SEQUITUR * sum(p.severita for p in seq_pats)
-    validita_formale = 1.0 - min(1.0, penalita_seq / (n_argomenti * 2))
+    sev_max_seq      = max((p.severita for p in seq_pats), default=0.0)
+    # Floor: il peggior non-sequitur conta almeno 50% della sua severità anche su
+    # testi lunghi dove la densità (penalita/n_argomenti) lo diluirebbe a zero.
+    validita_formale = 1.0 - min(1.0, max(sev_max_seq * 0.5,
+                                           penalita_seq / max(1, n_argomenti)))
     # Solo le fallacie CONFERMATE (regex alta-precisione + circolarità strutturale)
     # penalizzano ε. Le zero-shot di rilevanza sono SOSPETTE: restano nel report ma
     # NON vetano ε (il deterministico è inaffidabile su quelle → spettano all'induttivo).
@@ -340,7 +351,12 @@ async def analizza_async(
     n_regex_conf     = sum(1 for p in fallacie_pats if p.dettaglio.get("confermata", False))
     n_fallacie_conf  = n_regex_conf + len(circ_pats)
     n_fallacie_sosp  = n_fallacie - n_regex_conf
-    assenza_fallacie = 1.0 - min(1.0, n_fallacie_conf / (n_argomenti * 2))
+    # Usa severità, non solo conteggio: una fallacia(sev=0.92) pesa più di una(sev=0.3).
+    sev_fallacie     = ([p.severita for p in fallacie_pats if p.dettaglio.get("confermata", False)]
+                        + [p.severita for p in circ_pats])
+    sev_max_fal      = max(sev_fallacie, default=0.0)
+    penalita_fal     = sum(sev_fallacie) / max(1, n_argomenti) if sev_fallacie else 0.0
+    assenza_fallacie = 1.0 - min(1.0, max(sev_max_fal * 0.5, penalita_fal))
 
     # None = componente NON misurabile → escluso da ε (epsilon.calcola_epsilon
     # ripesa sui presenti). Niente valori finti che falserebbero la metrica.
@@ -530,8 +546,8 @@ _COMPONENTE_PATOLOGIE: dict[str, set] = {
                              TipoPatologia.DENSITA_CRITICA},
     "coerenza_tematica":    {TipoPatologia.INCOERENZA_TEMATICA, TipoPatologia.DERIVA_REGISTRO},
     "coesione_semantica":   {TipoPatologia.INCOERENZA_LOCALE},
-    "bias_linguistico":     {TipoPatologia.HEDGING_ECCESSIVO, TipoPatologia.BOOSTER_ECCESSIVO,
-                             TipoPatologia.APPELLO_AUTORITA},
+    "bias_linguistico":     {TipoPatologia.HEDGING_ECCESSIVO, TipoPatologia.BOOSTER_ECCESSIVO},
+    "credibilita_fonte":    {TipoPatologia.APPELLO_AUTORITA},
     "integrita_obiettivo":  {TipoPatologia.OBIETTIVO_CONTRADDITTORIO, TipoPatologia.OBIETTIVO_DISPERSO},
 }
 

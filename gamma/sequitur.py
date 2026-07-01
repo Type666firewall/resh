@@ -48,9 +48,12 @@ from ..schemas import Argomento, Patologia, TipoPatologia
 # la derivano, il «deve» è la traccia grammaticale di un C₃ (interruzione
 # dogmatica travestita da necessità — cfr. Berkeley PHK §26).
 _NECESSITA_RE = re.compile(
-    r"\b(deve|devono|dev['’]|si\s+deve|bisogna|occorre|"
+    r"\b(deve|devono|dev[‘’]|si\s+deve|bisogna|occorre|"
     r"necessariamente|per\s+forza|non\s+pu[òo]\s+che|non\s+possono\s+che|"
-    r"è\s+necessario|è\s+inevitabile|inevitabilmente)\b",
+    r"è\s+necessario|è\s+inevitabile|inevitabilmente|"
+    r"must|necessarily|it\s+is\s+necessary|cannot\s+but|"
+    r"have\s+to|has\s+to|need\s+to|needs\s+to|"
+    r"inevitably|is\s+inevitable|is\s+required)\b",
     re.IGNORECASE,
 )
 

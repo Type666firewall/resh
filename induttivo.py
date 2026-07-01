@@ -677,11 +677,11 @@ def analizza_induttivo(
         from .lambda_space import G, resolve
         O = resolve(G.ESTRAI_OBIETTIVO)(testo)    # lazy: Λ spina dorsale
 
-    da_eseguire = assi or [a for a, _ in _ASSI if a not in ("arsenale", "trilemma")]
+    da_eseguire = assi if assi is not None else [a for a, _ in _ASSI if a not in ("arsenale", "trilemma")]
 
     # 2. Arsenale (3 assi + contrasto in una call).
     arsenale_out: dict = {}
-    if "arsenale" in (assi or ["arsenale"]) or assi is None:
+    if assi is None or "arsenale" in assi:
         sys_ars = _corpo(prompts, "Arsenale Critico")
         usr_ars = _payload(testo, O, _OUT_ARSENALE, C=controargomento)
         arsenale_out = _call_asse("arsenale", sys_ars, usr_ars, profile=profile,

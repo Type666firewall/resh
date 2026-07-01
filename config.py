@@ -400,9 +400,9 @@ def _throttle(model: str, rpm: int) -> None:
     with _throttle_lock:
         last = _last_call.get(model, 0.0)
         wait = min_interval - (time.monotonic() - last)
-        if wait > 0:
-            time.sleep(wait)
-        _last_call[model] = time.monotonic()
+        _last_call[model] = time.monotonic() + max(0, wait)
+    if wait > 0:
+        time.sleep(wait)
 
 
 def _complete(p: Profile, system: str, user: str,

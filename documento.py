@@ -180,135 +180,135 @@ def analizza_documento_induttivo(
 
     lingua = lang or (_lingua_frontmatter(testo) if usa_pulizia else None) or "it"
     _lang_token = config.LANG.set(lingua)
+    try:  # finally: LANG.reset — non lasciare lingua appesa su eccezione
+            # La chiave-cache include la CONFIG di analisi: analisi diverse (target_char,
+        # arsenale completo vs sottoinsieme, astratti, det, lingua) NON collidono sullo
+        # stesso chunk_<id>.json — evita il bug di ricaricare chunk stale di un'altra config.
+        sig_src = f"tc={target_char}|full={arsenale_completo}|assi={sorted(assi_eff) if assi_eff else 'ALL'}|astr={con_astratti}|det={det}|lang={lingua}"
+        sig = hashlib.sha256(sig_src.encode("utf-8")).hexdigest()[:8]
+        cdir = _CACHE / f"doc_{dh}_{sig}"
+        cdir.mkdir(parents=True, exist_ok=True)
 
-    # La chiave-cache include la CONFIG di analisi: analisi diverse (target_char,
-    # arsenale completo vs sottoinsieme, astratti, det, lingua) NON collidono sullo
-    # stesso chunk_<id>.json — evita il bug di ricaricare chunk stale di un'altra config.
-    sig_src = f"tc={target_char}|full={arsenale_completo}|assi={sorted(assi_eff) if assi_eff else 'ALL'}|astr={con_astratti}|det={det}|lang={lingua}"
-    sig = hashlib.sha256(sig_src.encode("utf-8")).hexdigest()[:8]
-    cdir = _CACHE / f"doc_{dh}_{sig}"
-    cdir.mkdir(parents=True, exist_ok=True)
+        ricorrenti = _righe_ricorrenti(testo) if usa_pulizia else set()
+        chunks = _segmenta_documento(testo, target_char=target_char)
 
-    ricorrenti = _righe_ricorrenti(testo) if usa_pulizia else set()
-    chunks = _segmenta_documento(testo, target_char=target_char)
+        def _clean(t: str) -> str:
+            return _compatta_chunk(t, ricorrenti) if usa_pulizia else t
 
-    def _clean(t: str) -> str:
-        return _compatta_chunk(t, ricorrenti) if usa_pulizia else t
+        # O globale (una volta) dalla regione abstract = primo chunk pulito.
+        # CACHATO in cdir: al resume si riusa LO STESSO O dei chunk già analizzati
+        # (ri-estrarlo costerebbe 1 call e potrebbe divergere da quello usato nel MAP).
+        O_f = cdir / "_obiettivo.json"
+        if resume and O_f.exists():
+            O = json.loads(O_f.read_text(encoding="utf-8")) or None
+        else:
+            O = _estrai_O(_clean(chunks[0].testo), profile) if chunks else None
+            if O and "errore" not in O:
+                O_f.write_text(json.dumps(O, ensure_ascii=False), encoding="utf-8")
 
-    # O globale (una volta) dalla regione abstract = primo chunk pulito.
-    # CACHATO in cdir: al resume si riusa LO STESSO O dei chunk già analizzati
-    # (ri-estrarlo costerebbe 1 call e potrebbe divergere da quello usato nel MAP).
-    O_f = cdir / "_obiettivo.json"
-    if resume and O_f.exists():
-        O = json.loads(O_f.read_text(encoding="utf-8")) or None
-    else:
-        O = _estrai_O(_clean(chunks[0].testo), profile) if chunks else None
-        if O and "errore" not in O:
-            O_f.write_text(json.dumps(O, ensure_ascii=False), encoding="utf-8")
+        call_count = 0
+        per_chunk_out: list[dict] = []
+        eps_per_chunk: list[dict] = []
+        note_chunk: list[str] = []
+        saltati: list[int] = []
 
-    call_count = 0
-    per_chunk_out: list[dict] = []
-    eps_per_chunk: list[dict] = []
-    note_chunk: list[str] = []
-    saltati: list[int] = []
+        riparati: list[int] = []
 
-    riparati: list[int] = []
+        n_chunk = len(chunks)
+        logger.info("analizza_documento_induttivo: avvio map su %d chunk (doc_hash=%s)", n_chunk, dh)
+        for _idx, ch in enumerate(chunks, start=1):
+            cache_f = cdir / f"chunk_{ch.id}.json"
+            if resume and cache_f.exists():
+                rec = json.loads(cache_f.read_text(encoding="utf-8"))
+                falliti = _parti_fallite(rec)
+                if falliti:
+                    # riparazione mirata: ri-esegue SOLO le parti in errore (429 ecc.)
+                    if max_call_budget is not None and call_count + len(falliti) > max_call_budget:
+                        saltati.append(ch.id)
+                        logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
+                        continue
+                    logger.info("chunk %d/%d (id=%s): riparazione mirata (%s)", _idx, n_chunk, ch.id, ",".join(falliti))
+                    fix = _analizza_induttivo(
+                        _clean(ch.testo), obiettivo=_teleologia(O), assi=falliti,
+                        sintesi=False, profile=profile).as_dict()
+                    ind_r = rec["ind"]
+                    if "arsenale" in falliti:
+                        ind_r["arsenale"] = fix.get("arsenale")
+                    for aid in falliti:
+                        if aid in (fix.get("assi") or {}):
+                            ind_r["assi"][aid] = fix["assi"][aid]
+                    for k in ("trilemma", "inclosura"):
+                        if k in falliti:
+                            ind_r[k] = fix.get(k)
+                    call_count += len(falliti)
+                    riparati.append(ch.id)
+                    rec["nota_sintesi"] = _nota_sintesi(ch.loc, ind_r)
+                    cache_f.write_text(json.dumps(rec, ensure_ascii=False, indent=2),
+                                       encoding="utf-8")
+                per_chunk_out.append(rec)
+                eps_per_chunk.append({"id": ch.id, "loc": ch.loc,
+                                      "eps": (rec.get("det") or {}).get("eps_resh"),
+                                      "char": len(ch.testo)})
+                note_chunk.append(rec.get("nota_sintesi", ""))
+                if not falliti:
+                    logger.info("chunk %d/%d (id=%s): da cache (resume)", _idx, n_chunk, ch.id)
+                continue
 
-    n_chunk = len(chunks)
-    logger.info("analizza_documento_induttivo: avvio map su %d chunk (doc_hash=%s)", n_chunk, dh)
-    for _idx, ch in enumerate(chunks, start=1):
-        cache_f = cdir / f"chunk_{ch.id}.json"
-        if resume and cache_f.exists():
-            rec = json.loads(cache_f.read_text(encoding="utf-8"))
-            falliti = _parti_fallite(rec)
-            if falliti:
-                # riparazione mirata: ri-esegue SOLO le parti in errore (429 ecc.)
-                if max_call_budget is not None and call_count + len(falliti) > max_call_budget:
-                    saltati.append(ch.id)
-                    logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
-                    continue
-                logger.info("chunk %d/%d (id=%s): riparazione mirata (%s)", _idx, n_chunk, ch.id, ",".join(falliti))
-                fix = _analizza_induttivo(
-                    _clean(ch.testo), obiettivo=_teleologia(O), assi=falliti,
-                    sintesi=False, profile=profile).as_dict()
-                ind_r = rec["ind"]
-                if "arsenale" in falliti:
-                    ind_r["arsenale"] = fix.get("arsenale")
-                for aid in falliti:
-                    if aid in (fix.get("assi") or {}):
-                        ind_r["assi"][aid] = fix["assi"][aid]
-                for k in ("trilemma", "inclosura"):
-                    if k in falliti:
-                        ind_r[k] = fix.get(k)
-                call_count += len(falliti)
-                riparati.append(ch.id)
-                rec["nota_sintesi"] = _nota_sintesi(ch.loc, ind_r)
-                cache_f.write_text(json.dumps(rec, ensure_ascii=False, indent=2),
-                                   encoding="utf-8")
+            # budget: se il prossimo chunk sforerebbe il tetto, salta (resumabile)
+            costo = (14 if arsenale_completo else len(assi_chunk)) + (1 if con_astratti else 0)
+            if max_call_budget is not None and call_count + costo > max_call_budget:
+                saltati.append(ch.id)
+                logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
+                continue
+
+            logger.info("chunk %d/%d (id=%s): analisi (~%d call)", _idx, n_chunk, ch.id, costo)
+            testo_c = _clean(ch.testo)
+            det_out = None
+            if det:
+                try:
+                    _analizza_async = resolve(G.ANALIZZA_ASYNC)   # lazy: evita ciclo documento↔core
+                    r = asyncio.run(_analizza_async(testo_c, verbose=False))
+                    det_out = {"eps_resh": r.eps_resh, "componenti_epsilon": r.componenti_epsilon,
+                               "patologie": list(r.patologie)[:10]}
+                except Exception as exc:
+                    det_out = {"errore": f"{type(exc).__name__}: {exc}"}
+
+            ind = _analizza_induttivo(testo_c, obiettivo=_teleologia(O),
+                                      assi=assi_eff, sintesi=False, profile=profile)
+            ind_d = ind.as_dict()
+            astr = None
+            if con_astratti:
+                astr = _diagnosi_astratti(testo_c, obiettivo=_teleologia(O),
+                                          profile=profile)
+            call_count += costo
+
+            nota_sintesi = _nota_sintesi(ch.loc, ind_d)
+
+            rec = {"id": ch.id, "loc": ch.loc, "titolo": ch.titolo,
+                   "det": det_out, "ind": ind_d, "astratti": astr, "nota_sintesi": nota_sintesi}
+            cache_f.write_text(json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
             per_chunk_out.append(rec)
             eps_per_chunk.append({"id": ch.id, "loc": ch.loc,
-                                  "eps": (rec.get("det") or {}).get("eps_resh"),
-                                  "char": len(ch.testo)})
-            note_chunk.append(rec.get("nota_sintesi", ""))
-            if not falliti:
-                logger.info("chunk %d/%d (id=%s): da cache (resume)", _idx, n_chunk, ch.id)
-            continue
+                                  "eps": (det_out or {}).get("eps_resh"), "char": len(ch.testo)})
+            note_chunk.append(nota_sintesi)
 
-        # budget: se il prossimo chunk sforerebbe il tetto, salta (resumabile)
-        costo = (14 if arsenale_completo else len(assi_chunk)) + (1 if con_astratti else 0)
-        if max_call_budget is not None and call_count + costo > max_call_budget:
-            saltati.append(ch.id)
-            logger.info("chunk %d/%d (id=%s): saltato, budget esaurito", _idx, n_chunk, ch.id)
-            continue
-
-        logger.info("chunk %d/%d (id=%s): analisi (~%d call)", _idx, n_chunk, ch.id, costo)
-        testo_c = _clean(ch.testo)
-        det_out = None
-        if det:
-            try:
-                _analizza_async = resolve(G.ANALIZZA_ASYNC)   # lazy: evita ciclo documento↔core
-                r = asyncio.run(_analizza_async(testo_c, verbose=False))
-                det_out = {"eps_resh": r.eps_resh, "componenti_epsilon": r.componenti_epsilon,
-                           "patologie": list(r.patologie)[:10]}
-            except Exception as exc:
-                det_out = {"errore": f"{type(exc).__name__}: {exc}"}
-
-        ind = _analizza_induttivo(testo_c, obiettivo=_teleologia(O),
-                                  assi=assi_eff, sintesi=False, profile=profile)
-        ind_d = ind.as_dict()
-        astr = None
-        if con_astratti:
-            astr = _diagnosi_astratti(testo_c, obiettivo=_teleologia(O),
-                                      profile=profile)
-        call_count += costo
-
-        nota_sintesi = _nota_sintesi(ch.loc, ind_d)
-
-        rec = {"id": ch.id, "loc": ch.loc, "titolo": ch.titolo,
-               "det": det_out, "ind": ind_d, "astratti": astr, "nota_sintesi": nota_sintesi}
-        cache_f.write_text(json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
-        per_chunk_out.append(rec)
-        eps_per_chunk.append({"id": ch.id, "loc": ch.loc,
-                              "eps": (det_out or {}).get("eps_resh"), "char": len(ch.testo)})
-        note_chunk.append(nota_sintesi)
-
-    logger.info("analizza_documento_induttivo: fine map — %d call, %d riparati, %d saltati",
-                call_count, len(riparati), len(saltati))
-    eps_doc = _aggrega_epsilon(eps_per_chunk)
-    sintesi_doc = _sintesi_finale(O, note_chunk, profile) if note_chunk else ""
-    config.LANG.reset(_lang_token)   # non lasciare lingua "appesa" oltre questa chiamata
-
-    return RapportoDocumento(
-        fonte=fonte, lingua=lingua, n_chunk=len(chunks), obiettivo=O,
-        chunk=per_chunk_out, eps_doc=eps_doc, eps_per_chunk=eps_per_chunk,
-        sintesi_doc=sintesi_doc, saltati=saltati,
-        meta={"doc_hash": dh, "profilo": config.config_snapshot(profile).get("profile"),
-              "model": config.config_snapshot(profile).get("model"),
-              "assi_chunk": ("ALL (arsenale_completo)" if arsenale_completo else assi_chunk),
-              "con_astratti": con_astratti, "call_eseguite": call_count,
-              "riparati": riparati,
-              "ts": datetime.datetime.now().isoformat(timespec="seconds")},
-    )
+        logger.info("analizza_documento_induttivo: fine map — %d call, %d riparati, %d saltati",
+                    call_count, len(riparati), len(saltati))
+        eps_doc = _aggrega_epsilon(eps_per_chunk)
+        sintesi_doc = _sintesi_finale(O, note_chunk, profile) if note_chunk else ""
+        return RapportoDocumento(
+            fonte=fonte, lingua=lingua, n_chunk=len(chunks), obiettivo=O,
+            chunk=per_chunk_out, eps_doc=eps_doc, eps_per_chunk=eps_per_chunk,
+            sintesi_doc=sintesi_doc, saltati=saltati,
+            meta={"doc_hash": dh, "profilo": config.config_snapshot(profile).get("profile"),
+                  "model": config.config_snapshot(profile).get("model"),
+                  "assi_chunk": ("ALL (arsenale_completo)" if arsenale_completo else assi_chunk),
+                  "con_astratti": con_astratti, "call_eseguite": call_count,
+                  "riparati": riparati,
+                  "ts": datetime.datetime.now().isoformat(timespec="seconds")},
+        )
+    finally:
+        config.LANG.reset(_lang_token)
 
 
 def _teleologia(O: Optional[dict]):

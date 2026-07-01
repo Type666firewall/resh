@@ -91,7 +91,7 @@ def _normalize_pertesto(rap: dict) -> dict:
         "componenti_epsilon": rap.get("componenti_epsilon") or {},
         "patologie_strutturate": pats,
         "corno_trilemma": tri_llm.get("corno", ""),
-        "inclosura_presente": incl_llm.get("forma", "") == "presente",
+        "inclosura_presente": bool(incl_llm.get("forma")) and incl_llm.get("forma") != "assente",
         "inclosura_modo": incl_llm.get("modo", ""),
         "malafede_grado": (arsenale.get("malafede_o") or {}).get("grado", ""),
         "teleologia_coerenza": obiettivo.get("coerenza"),
