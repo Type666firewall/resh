@@ -71,6 +71,9 @@ pip install -e ".[full]"  # same, with the full ML stack (stanza, torch, NLI, em
 python -c "import stanza; stanza.download('it'); stanza.download('en')"
 ```
 
+resh is not (yet) published on PyPI: install it from the clone, as above. Install trouble?
+Check Python ≥ 3.11 and `pip install --upgrade pip` before retrying.
+
 On an NVIDIA GPU, install torch from the CUDA index before the full stack:
 
 ```bash

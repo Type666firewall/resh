@@ -54,4 +54,6 @@ packages = ["resh", "resh.gamma"]
 
 [tool.setuptools.package-data]
 # Risorse caricate a runtime via Path(__file__): devono viaggiare col package.
-resh = ["prompts/*.md", "lessici/*.json"]
+# lessici/* copre sia i marker JSON sia i lessici TXT (connettivi, booster,
+# hedging, ...): senza i .txt il wheel installava un classificatore muto.
+resh = ["prompts/*.md", "lessici/*.json", "lessici/*.txt"]

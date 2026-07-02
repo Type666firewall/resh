@@ -1,0 +1,57 @@
+# CI leggera: installazione core (senza stack ML), smoke della CLI, integrità
+# del wheel (i dati di runtime DEVONO viaggiare col package: lessici txt/json e
+# prompt md — bug reale trovato alla 0.1.0), batterie di test pure-Python.
+# Lo stack [full] (torch, stanza, ...) NON si installa qui: gigabyte per run,
+# e le batterie no-ML coprono già packaging, import e logica deterministica pura.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Installazione core (senza stack ML)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Smoke CLI
+        run: resh --help
+
+      - name: Integrità del wheel (package-data inclusa)
+        run: |
+          pip install build
+          python -m build --wheel
+          python - <<'PY'
+          import glob, zipfile
+          w = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(w).namelist()
+          txt = [n for n in names if n.startswith("resh/lessici/") and n.endswith(".txt")]
+          jsn = [n for n in names if n.startswith("resh/lessici/") and n.endswith(".json")]
+          md  = [n for n in names if n.startswith("resh/prompts/")]
+          assert len(txt) >= 14, f"lessici .txt mancanti nel wheel: trovati {len(txt)}"
+          assert len(jsn) >= 6,  f"lessici .json mancanti nel wheel: trovati {len(jsn)}"
+          assert len(md)  >= 2,  f"prompt mancanti nel wheel: trovati {len(md)}"
+          print(f"wheel ok: {len(names)} file, {len(txt)} txt, {len(jsn)} json, {len(md)} prompt")
+          PY
+
+      - name: Batterie di test (no-ML)
+        run: |
+          python tests/test_aggregatore.py
+          python tests/test_postprocess_inclosura.py
+          python tests/test_persistenza_doc.py
+          python tests/test_trilemma_predetect.py

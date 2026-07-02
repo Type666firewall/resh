@@ -16,3 +16,7 @@ _keys_local.py
 # Testi sorgente per i report di esempio: restano locali (diritti dei
 # traduttori/autori) — nel repo vanno solo i report, che citano e rinviano.
 examples/fonti/
+
+# Artefatti di build
+build/
+dist/
