@@ -22,6 +22,20 @@ Useful for: peer review, structural (not factual) fact-checking, analysis of
 philosophical/theoretical papers, or simply as a merciless second reader that never gets
 tired of checking whether an argument stands on its own.
 
+## Why
+
+The sceptic speaks as sensibly as the dogmatist. The one posits in order to act — it is the
+force that builds — but falls into the sin of absolutizing what it posits; the other warns
+against ideologies and absolutisms, yet left to itself it paralyzes, devouring itself unless
+governed and directed. And scepticism is still fought as if it were a problem, rather than
+the tangible manifestation that what we call the world escapes any final determination.
+
+resh was born here: it is a way of **organizing doubt so that it serves life**. It does not
+judge truth — it asks every text to show what it stands on, and declares, first of all, what
+it stands on itself.
+
+> «Scepticism is a sedative — the surest I have found.» — E. M. Cioran
+
 ## How it works, in short
 
 resh looks at every text with **two independent instruments, on equal footing** — they are

@@ -22,6 +22,21 @@ Utile se: revisioni tra pari, fact-checking strutturale (non fattuale), analisi 
 filosofici/teorici, o semplicemente per avere un secondo lettore spietato che non si stanca
 mai di controllare se un argomento sta in piedi da solo.
 
+## Perché
+
+Lo scettico parla con senso tanto quanto il dogmatico. L'uno pone per agire — è la forza che
+costruisce — ma cade nel peccato di assolutizzare ciò che pone; l'altro mette in guardia da
+ideologie e assolutismi, ma lasciato a sé paralizza, fagocitando se stesso se non viene
+governato e indirizzato. E ancora si combatte lo scetticismo come se fosse un problema, e non
+la manifestazione tangibile che ciò che chiamiamo mondo sfugge a ogni determinazione
+definitiva.
+
+resh nasce da qui: è un modo di **organizzare il dubbio perché serva la vita**. Non giudica
+la verità — chiede a ogni testo di mostrare su che cosa si regge, e dichiara per primo su che
+cosa si regge lui.
+
+> «Lo scetticismo è un calmante, il più sicuro che abbia trovato.» — E. M. Cioran
+
 ## Come funziona, in breve
 
 resh guarda ogni testo con **due strumenti indipendenti, a pari dignità** — non si fondono
