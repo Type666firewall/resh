@@ -57,6 +57,7 @@ class RapportoDocumento:
     sintesi_doc:  str
     saltati:      list[int]
     meta:         dict = field(default_factory=dict)
+    paratesto:    list = field(default_factory=list)   # chunk scartati come paratesto (scarto DICHIARATO)
 
     def as_dict(self) -> dict:
         return self.__dict__
@@ -124,6 +125,31 @@ def _nota_sintesi(loc: str, ind_d: dict) -> str:
     return " | ".join(note)
 
 
+# Paratesto (ringraziamenti, bibliografie, indici): cortesia editoriale, non
+# argomentazione — analizzarlo produce un ε privo di senso e rumore diagnostico
+# (visto su Ioli 2013: il chunk-ringraziamenti usciva a ε=0.194 e gli assi
+# «diagnosticavano» le pagine di cortesia). Euristica CONSERVATIVA: marker nel
+# titolo di sezione, o incipit del chunk che APRE con un marker. Ogni scarto è
+# dichiarato nel report (mai silenzioso); si disattiva con usa_pulizia=False.
+_PARATESTO_MARKERS = (
+    "ringraziament", "grazie a ", "bibliografia", "riferimenti bibliografici",
+    "opere citate", "indice dei nomi", "indice analitico", "elenco delle abbreviazioni",
+    "acknowledg", "references", "bibliography", "works cited", "index of names",
+)
+
+
+def _paratesto_motivo(titolo: Optional[str], testo: str) -> Optional[str]:
+    """Motivo dello scarto se il chunk è paratesto, altrimenti None."""
+    tit = (titolo or "").lower()
+    incipit = " ".join(testo.strip().lower().split())[:160]
+    for m in _PARATESTO_MARKERS:
+        if m in tit:
+            return f"marker «{m.strip()}» nel titolo di sezione"
+        if incipit.startswith(m):
+            return f"il chunk apre con «{m.strip()}»"
+    return None
+
+
 def _aggrega_epsilon(per_chunk: list[dict]) -> Optional[float]:
     """Media geometrica pesata per lunghezza dei chunk (coerente con ε geometrico)."""
     num = den = 0.0
@@ -141,7 +167,8 @@ lista di rilievi/diagnosi già emersi dai miei assi critici applicati ai singoli
 Il mio compito è integrarli in una sintesi UNICA a livello di documento: dove la pretesa di φ regge e
 dove cede, quale corno del Trilemma domina nel complesso, le tensioni ricorrenti tra i chunk. NON
 produco un punteggio, NON invento rilievi nuovi, NON giudico la verità di φ. Sintetizzo ciò che è
-già emerso, a livello dell'intero documento."""
+già emerso, a livello dell'intero documento. Scrivo INTERAMENTE in italiano, senza inserti in altre
+lingue (i passi citati restano nella loro lingua originale)."""
 
 
 def _sintesi_finale(O: Optional[dict], note_chunk: list[str], profile: Optional[str]) -> str:
@@ -211,12 +238,21 @@ def analizza_documento_induttivo(
         eps_per_chunk: list[dict] = []
         note_chunk: list[str] = []
         saltati: list[int] = []
+        paratesto: list[dict] = []
 
         riparati: list[int] = []
 
         n_chunk = len(chunks)
         logger.info("analizza_documento_induttivo: avvio map su %d chunk (doc_hash=%s)", n_chunk, dh)
         for _idx, ch in enumerate(chunks, start=1):
+            if usa_pulizia:
+                motivo = _paratesto_motivo(ch.titolo, ch.testo)
+                if motivo:
+                    paratesto.append({"id": ch.id, "loc": ch.loc, "motivo": motivo,
+                                      "char": len(ch.testo)})
+                    logger.info("chunk %d/%d (id=%s): scartato come paratesto (%s)",
+                                _idx, n_chunk, ch.id, motivo)
+                    continue
             cache_f = cdir / f"chunk_{ch.id}.json"
             if resume and cache_f.exists():
                 rec = json.loads(cache_f.read_text(encoding="utf-8"))
@@ -299,7 +335,7 @@ def analizza_documento_induttivo(
         return RapportoDocumento(
             fonte=fonte, lingua=lingua, n_chunk=len(chunks), obiettivo=O,
             chunk=per_chunk_out, eps_doc=eps_doc, eps_per_chunk=eps_per_chunk,
-            sintesi_doc=sintesi_doc, saltati=saltati,
+            sintesi_doc=sintesi_doc, saltati=saltati, paratesto=paratesto,
             meta={"doc_hash": dh, "profilo": config.config_snapshot(profile).get("profile"),
                   "model": config.config_snapshot(profile).get("model"),
                   "assi_chunk": ("ALL (arsenale_completo)" if arsenale_completo else assi_chunk),

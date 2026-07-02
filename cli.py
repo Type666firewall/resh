@@ -54,7 +54,9 @@ def _build_markdown(rapporto, nome_documento: str) -> str:
         md.append("### Esplicite")
         md.extend([f"- {p}" for p in rapporto.premesse.esplicite])
     if rapporto.premesse.implicite:
-        md.append("### Implicite")
+        md.append("### Implicite (firme lessicali)")
+        md.append("> Non frasi: terne di lemmi che individuano il *luogo* della premessa "
+                  "non dichiarata rilevata dal NLI. Vanno lette come indizi di posizione.")
         md.extend([f"- {p}" for p in rapporto.premesse.implicite])
     if rapporto.premesse.sospette:
         md.append("### ⚠ Sospette")
@@ -96,6 +98,9 @@ def _build_markdown(rapporto, nome_documento: str) -> str:
 
     if rapporto.patologie:
         md.append("## ⚠ Patologie")
+        md.append("> Una stessa frase può comparire con più ipotesi di fallacia: sono candidate "
+                  "indipendenti del classificatore, non un doppio conteggio. Solo le voci "
+                  "`confermata=True` sono verdetti.\n")
         md.extend([f"- {p}" for p in rapporto.patologie])
         md.append("")
 

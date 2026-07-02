@@ -182,6 +182,25 @@ REGIME D: Testi terziari (DIAGNOSIS sistematica)
   - D'': Sini (lezione orale teoretica trascritta — alta densità DIAGNOSIS continentale)
 ```
 
+### Provenienza dei testi (v1.3 — dichiarazione di trasparenza)
+
+Non tutti i testi-sorgente dei gold sono opere pubblicate: una parte del corpus è
+stata prodotta dall'autore del dataset, da solo o in loop uomo↔IA, come **materiale
+di contrasto** deliberatamente ricco di strutture-bersaglio. L'annotazione segue gli
+stessi criteri per tutti; la provenienza va però tenuta presente nel leggere le
+metriche, perché su testi nati vicino al lessico dei marker il rischio di
+circolarità (marker calibrati sugli stessi testi che li validano) è più alto.
+
+| Gold file | Provenienza |
+|---|---|
+| `gold_arsenale_critico` | sintetico, loop uomo↔IA (testo dell'autore) |
+| `gold_v19_gorgia_berkeley` | sintetico, loop uomo↔IA (paper dell'autore) |
+| `gold_circolarita_metafisica` | sintetico, loop uomo↔IA (testo dell'autore) |
+| `gold_diario_rappresentazione` | ~90% testo umano dell'autore, rifinitura in loop |
+| `gold_la_realta` | generato da IA |
+| `gold_priest_inclosura` | loop uomo↔IA su idee di Priest (ritenuto conforme dall'annotatore) |
+| tutti gli altri | testi pubblicati (Descartes, Hume, Leibniz, Hilbert, Albert, Sini, Ioli, Zilioli, Friedman, trad. Berkeley) |
+
 ---
 
 ## 8. Strutture argomentative ≠ corni del Trilemma (v1.1)

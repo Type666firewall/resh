@@ -118,6 +118,9 @@ def _render_det(det: dict) -> list[str]:
                 out.append(f"    - [{c.get('tipo')}] severità {c.get('severita')} — {det_str}")
     pat = det.get("patologie", [])
     out.append(f"\n### Patologie rilevate ({len(pat)})\n")
+    out.append("> Una stessa frase può comparire con più ipotesi di fallacia: sono candidate "
+               "indipendenti del classificatore, non un doppio conteggio. Solo le voci "
+               "`confermata=True` sono verdetti.\n")
     if pat:
         for p in pat:
             out.append(f"- {p}")
@@ -188,17 +191,28 @@ def _render_ind(ind: dict) -> list[str]:
                            f"convergenze {len(conv)}, divergenze {len(dive)}")
                 # Disaccordo mostrato, non solo contato: ogni divergenza con il
                 # suo ancoraggio testuale, così il lettore giudica da sé.
-                for d in dive[:10]:
+                # Dedup: hit distinti dello stesso marker producono righe identiche.
+                viste: set = set()
+                uniche = []
+                for d in dive:
                     det_lato = d.get("sottotipo_det") or d.get("corno_det") or "—"
                     llm_lato = d.get("corno_llm") or "—"
+                    chiave = (det_lato, llm_lato, d.get("span") or "")
+                    if chiave in viste:
+                        continue
+                    viste.add(chiave)
+                    uniche.append((det_lato, llm_lato, d))
+                for det_lato, llm_lato, d in uniche[:10]:
                     riga = f"  - ⚡ deterministico: `{det_lato}` vs LLM: `{llm_lato}`"
                     if d.get("span"):
                         riga += f" — «{d['span']}»"
+                    elif d.get("fonte_det"):
+                        riga += f" (segnale da: {d['fonte_det']})"
                     if d.get("nota"):
                         riga += f" ({d['nota']})"
                     out.append(riga)
-                if len(dive) > 10:
-                    out.append(f"  - … e altre {len(dive) - 10} divergenze (vedi JSON)")
+                if len(uniche) > 10:
+                    out.append(f"  - … e altre {len(uniche) - 10} divergenze (vedi JSON)")
     inc = ind.get("inclosura") or {}
     if inc and "errore" not in inc:
         llm = inc.get("llm", {})
@@ -276,6 +290,12 @@ def genera_report_documento(rap_doc, *, run_uid: str = "") -> str:
         head.append(f"\n**Sintesi:** {sd}")
     if saltati:
         head.append(f"\n⚠ **Chunk saltati per budget:** {saltati} (ripristinabili al resume)")
+    par = rap_doc.get("paratesto") or []
+    if par:
+        head.append("\n**Chunk scartati come paratesto** (cortesia editoriale, non argomentazione — "
+                    "esclusi da ε_doc e dalle diagnosi):")
+        for p in par:
+            head.append(f"- chunk {p.get('id')} [{p.get('loc')}], {p.get('char')} char — {p.get('motivo')}")
 
     parti = head
 

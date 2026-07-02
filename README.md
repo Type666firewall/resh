@@ -221,5 +221,22 @@ Tutto via variabili d'ambiente — nessun file da modificare:
 
 ## Esempi
 
-`examples/` contiene testi di prova e i report reali che producono — utile per vedere il
-formato di output senza dover lanciare nulla.
+`examples/` contiene report **reali e non ritoccati** su testi filosofici veri:
+
+- `report_berkeley_intro_IT_pertesto_qwen-max.md` — Berkeley, *Introduzione ai Principi*
+  (trad. it.): analisi per-testo con arsenale induttivo completo.
+- `report_ioli_gorgia_IT_documento_qwen-max.md` — R. Ioli, introduzione al Gorgia (Carocci
+  2013): modalità documento, map-reduce su 11 chunk.
+- `report_zilioli_nihilist_EN_documento_qwen-plus.md` — U. Zilioli, *Nihilist arguments in
+  Gorgias and Nāgārjuna*: modalità documento su testo inglese.
+
+I testi sorgente non sono inclusi (diritti degli autori/traduttori): ogni report identifica
+il documento con hash sha256, dimensione e riferimento bibliografico.
+
+**I report sono prodotti da versioni via via evolute di resh.** resh cambia — anche grazie
+a ciò che questi stessi report hanno rivelato: il filtro del paratesto e il caricamento dei
+prompt inglesi, per esempio, nascono da difetti *visibili* in due degli esempi qui sopra, che
+li dichiarano in una nota di versione in testa invece di nasconderli. Ogni report registra
+data, modello LLM e versioni esatte dello stack (`backend.ambiente`): le differenze di
+formato tra esempi sono la storia del progetto, non incuria. Per il quadro dei limiti noti,
+vedi «Questioni aperte».

@@ -61,16 +61,36 @@ _abstract_lex: dict | None = None
 # Il corpo del prompt = testo dopo l'header `## ` fino a `**Input**` (escluso) —
 # così le citazioni μ (blockquote `>`, che seguono `**Output**`) restano fuori.
 # ─────────────────────────────────────────────────────────────────────────────
+# Titoli EN delle sezioni nominate → prefissi IT cercati dal codice (_corpo).
+# Gli assi ऋⁿ hanno lo stesso prefisso in entrambe le lingue: nessun raccordo.
+_TITOLI_EN_IT = {
+    "Critical Arsenal":            "Arsenale Critico",
+    "Münchhausen Trilemma":        "Trilemma di Münchhausen",
+    "Inclosure — Priest's Schema": "Inclosura — Schema di Priest",
+}
+
+
 def carica_prompt() -> dict[str, str]:
-    """Mappa {titolo_sezione: corpo_prompt} da prompts_resh.md."""
-    txt = _PROMPTS_PATH.read_text(encoding="utf-8")
+    """Mappa {titolo_sezione: corpo_prompt} dal file prompt della LINGUA ATTIVA.
+
+    Con `config.LANG` = "en" carica prompts_resh_en.md (i titoli inglesi vengono
+    rimappati sui prefissi IT che il codice cerca); fallback sul file IT se il
+    file di lingua non esiste. Prima del fix il file IT era caricato SEMPRE:
+    i giudizi uscivano in italiano anche su testi inglesi."""
+    path = _PROMPTS_PATH
+    lang = config.LANG.get()
+    if lang and lang != "it":
+        cand = _PROMPTS_PATH.with_name(f"prompts_resh_{lang}.md")
+        if cand.exists():
+            path = cand
+    txt = path.read_text(encoding="utf-8")
     out: dict[str, str] = {}
     for sec in re.split(r"^## ", txt, flags=re.M)[1:]:
         title = sec.splitlines()[0].strip()
         body = sec.split("**Input**")[0]
         # via l'eventuale riga-titolo residua e spazi
         body = "\n".join(body.splitlines()[1:]).strip()
-        out[title] = body
+        out[_TITOLI_EN_IT.get(title, title)] = body
     return out
 
 

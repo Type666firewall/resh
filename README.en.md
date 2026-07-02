@@ -222,5 +222,22 @@ Everything via environment variables — no file to edit:
 
 ## Examples
 
-`examples/` contains sample texts and the real reports they produce — useful to see the
-output format without running anything.
+`examples/` contains **real, untouched reports** on actual philosophical texts:
+
+- `report_berkeley_intro_IT_pertesto_qwen-max.md` — Berkeley, *Introduction to the
+  Principles* (It. transl.): per-text analysis with the full inductive arsenal.
+- `report_ioli_gorgia_IT_documento_qwen-max.md` — R. Ioli, introduction to Gorgias (Carocci
+  2013): document mode, map-reduce over 11 chunks.
+- `report_zilioli_nihilist_EN_documento_qwen-plus.md` — U. Zilioli, *Nihilist arguments in
+  Gorgias and Nāgārjuna*: document mode on an English text.
+
+Source texts are not included (authors'/translators' rights): every report identifies its
+document by sha256 hash, size and bibliographic reference.
+
+**The reports were produced by progressively evolving versions of resh.** resh changes —
+partly thanks to what these very reports revealed: the paratext filter and the English
+prompt loading, for instance, were born from defects *visible* in two of the examples above,
+which declare them in a version note at the top instead of hiding them. Every report records
+its date, LLM model and exact stack versions (`backend.ambiente`): format differences between
+examples are the project's history, not carelessness. For the map of known limits, see
+"Open questions".
