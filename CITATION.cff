@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "Se usi resh in un lavoro di ricerca, citalo così / If you use resh in research, please cite it as below."
+title: "resh (ऋ) — analisi critico-epistemica di testi / critical-epistemic analysis of texts"
+type: software
+authors:
+  - family-names: "Giordano"
+    given-names: "Antonio"
+repository-code: "https://github.com/Type666firewall/resh"
+license: MIT
+version: 0.1.0
+date-released: "2026-07-02"
+keywords:
+  - philosophy
+  - epistemology
+  - argumentation
+  - fallacy detection
+  - Münchhausen trilemma
+  - NLP
+abstract: >-
+  resh legge un testo filosofico e ne misura la tenuta epistemica strutturale:
+  un punteggio riproducibile (epsilon) da pipeline NLP deterministica, affiancato
+  da un arsenale critico LLM (trilemma di Münchhausen, inclosura di Priest,
+  diagnosi di malafede) a parità di ruolo, mai fuso in un unico verdetto.

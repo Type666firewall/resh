@@ -1,11 +1,22 @@
 # ऋ (resh) — analisi critico-epistemica di testi
 
+[![Licenza: MIT](https://img.shields.io/badge/licenza-MIT-blue)](LICENSE)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
+![Testi: IT | EN](https://img.shields.io/badge/testi-IT%20%7C%20EN-green)
+
 > 🇬🇧 English version: [README.en.md](README.en.md)
 
 resh legge un testo (o un intero documento) e risponde a una domanda sola: **quanto regge,
 epistemicamente, quello che sto leggendo?** Non dice se è vero o falso — cerca dogmi non
 dichiarati, premesse occultate, salti logici, fallacie, circolarità, e un punteggio
 riproducibile (`ε_ऋ`) che misura la tenuta strutturale dell'argomentazione.
+
+Un assaggio, dall'esempio reale sull'*Introduzione ai Principi* di Berkeley (`examples/`):
+
+> **ε_ऋ = 0.5524** (tenuta epistemica: bassa) · 19 patologie rilevate
+> **Trilemma di Münchhausen:** C3 — arresto dogmatico nascosto, in modalità USE
+> *«I candidati pre-rilevati come "è evidente che" e "Si deve credere" [Intro, §3]
+> rafforzano l'idea che Berkeley stia facendo uso di assunti non giustificati.»*
 
 Utile se: revisioni tra pari, fact-checking strutturale (non fattuale), analisi di paper
 filosofici/teorici, o semplicemente per avere un secondo lettore spietato che non si stanca
