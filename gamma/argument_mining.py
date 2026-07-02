@@ -201,6 +201,7 @@ def estrai_argomenti(unita: list[str], embeddings: np.ndarray) -> list[Argomento
                 tesi_supportata = tesi_principale,
                 tipo            = _classify_tipo(frase),
                 premesse_usate  = _premesse_usate(frase, frasi, embeddings, i),
+                confidence      = round(sc, 4),
             ))
 
     # Fallback deterministico: se l'NLI non isola premesse (frequente su unità

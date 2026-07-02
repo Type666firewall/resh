@@ -125,6 +125,35 @@ reconciling them: neither side has the last word.
 **Honesty about failures.** Every failed LLM call appears as a "discarded contribution" with
 its error: a report declaring 14 errors is an honest report, not a broken one.
 
+## Open questions
+
+resh is an evolving project, and a tool that diagnoses hidden dogmas cannot afford to hide
+its own: the deliberately provisional choices live here.
+
+- **The inventory of argumentative units is noisy.** Clause segmentation breaks up long
+  periods — classical prose suffers more than contemporary writing — and fragments or
+  isolated subordinate clauses end up in the inventory as "candidate premises". That is why
+  every line shows the classifier's `conf`: below ~0.7, treat it as a weak flag. Under
+  evaluation: collapsing units with no recognizable connectives into a count, keeping the
+  detail in the JSON.
+- **`struttura_argomentativa` is sensitive to period style.** On long-period texts the low
+  value is partly a segmentation artifact, not a defect of the text: read it together with
+  the other components, never alone.
+- **LLM judgments can smuggle in an undeclared philosophical frame** — for instance reading
+  an idealist by the yardstick of an implicit realism. Current mitigation: the deterministic
+  pre-detect candidates must be adjudicated one by one, and rejecting one must be motivated
+  with a citation. It remains an open prompt-design question, and reports should be read
+  knowing it.
+- **Load is not count.** Implicit-premise density counts hidden premises, but not how much
+  of the edifice each one carries: a text can have a single unproven premise holding up
+  everything (the Berkeley §3 case). A *foundational concentration* metric is planned
+  (`docs/roadmap.md`).
+- **Calibration is mostly Italian.** The annotated gold sets are largely IT; the EN side
+  works but is less calibrated.
+
+Every report records the exact stack versions (`backend.ambiente`): numbers are comparable
+only across identical stacks — and resh evolves.
+
 ## Models — what we recommend
 
 resh talks to any OpenAI-compatible endpoint (`config.py`, profiles in `PROFILES`).

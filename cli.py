@@ -61,9 +61,14 @@ def _build_markdown(rapporto, nome_documento: str) -> str:
         md.extend([f"- **{p}**" for p in rapporto.premesse.sospette])
     md.append("")
 
-    md.append(f"## Inventario Argomenti ({len(rapporto.inventario)})")
+    md.append(f"## Unità argomentative candidate ({len(rapporto.inventario)} premesse rilevate)")
+    md.append("> Clausole che il classificatore NLI etichetta come premesse: **candidate**, "
+              "non argomenti completi. La segmentazione spezza i periodi lunghi, quindi "
+              "compaiono frammenti. `conf` = fiducia del classificatore (0.00 = fallback "
+              "euristico); il tipo indica solo i connettivi riconosciuti nella clausola.\n")
     for i, a in enumerate(rapporto.inventario, 1):
-        md.append(f"**{i}. [{a.tipo}]** {a.testo}")
+        conf = getattr(a, "confidence", 0.0)
+        md.append(f"**{i}. [{a.tipo}, conf {conf:.2f}]** {a.testo}")
     md.append("")
 
     md.append("## Coerenza Semantica")

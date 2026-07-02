@@ -516,7 +516,7 @@ def _format_run_markdown(
     add(f"| premesse esplicite | {run['n_premesse_esplicite']} |")
     add(f"| premesse implicite | {run['n_premesse_implicite']} |")
     add(f"| premesse sospette | {run['n_premesse_sospette']} |")
-    add(f"| argomenti (inventario) | {run['n_argomenti']} |")
+    add(f"| unità argomentative candidate | {run['n_argomenti']} |")
     add(f"| patologie totali | {run['n_patologie']} |")
     add(f"| di cui fallacie | {run['n_fallacie']} |")
     add("")

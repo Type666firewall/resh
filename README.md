@@ -124,6 +124,34 @@ riconciliarle: nessuno dei due lati ha l'ultima parola.
 **Onestà sui fallimenti.** Ogni call LLM fallita compare come "contributo scartato" con
 l'errore: un report con 14 errori dichiarati è un report onesto, non un report rotto.
 
+## Questioni aperte
+
+resh è un progetto in evoluzione, e un tool che diagnostica dogmi nascosti non può
+permettersi di nasconderne di propri: le scelte dichiaratamente provvisorie stanno qui.
+
+- **L'inventario delle unità argomentative è rumoroso.** La segmentazione in clausole spezza
+  i periodi lunghi — la prosa classica ne soffre più di quella contemporanea — e frammenti o
+  subordinate isolate finiscono nell'inventario come "premesse candidate". Per questo ogni
+  riga mostra la `conf` del classificatore: sotto ~0.7 va presa come segnalazione debole. In
+  valutazione: compattare le unità senza connettivi riconosciuti in un conteggio, lasciando
+  il dettaglio nel JSON.
+- **`struttura_argomentativa` risente dello stile d'epoca.** Su testi a periodi lunghi il
+  valore basso è in parte un artefatto della segmentazione, non un difetto del testo: va
+  letto insieme agli altri componenti, non da solo.
+- **I giudizi LLM possono importare un quadro filosofico non dichiarato** — per esempio
+  leggere un idealista dal metro di un realismo implicito. Mitigazione attuale: i candidati
+  del pre-detect deterministico vanno giudicati uno per uno e il rigetto va motivato con
+  citazione. Resta una questione aperta di prompt design, e i report vanno letti sapendolo.
+- **Il carico non è il conteggio.** La densità di premesse implicite conta le premesse
+  nascoste, ma non quanto edificio regge ciascuna: un testo può avere un'unica premessa
+  indimostrata che sostiene tutto (il caso Berkeley §3). La metrica di *concentrazione
+  fondazionale* è in progetto (`docs/roadmap.md`).
+- **Calibrazione quasi tutta italiana.** I gold set annotati sono in gran parte IT; il lato
+  EN funziona ma è meno calibrato.
+
+Ogni report registra le versioni esatte dello stack (`backend.ambiente`): i numeri sono
+confrontabili solo a parità di stack — e resh evolve.
+
 ## Modelli — cosa consigliamo
 
 resh parla con qualunque endpoint OpenAI-compatibile (`config.py`, profili in `PROFILES`).

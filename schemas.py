@@ -70,6 +70,7 @@ class Argomento:
     tesi_supportata: str
     tipo:            str
     premesse_usate:  list[str] = field(default_factory=list)
+    confidence:      float = 0.0   # score NLI etichetta "premessa"; 0.0 = fallback euristico
 
 
 @dataclass
