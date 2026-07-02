@@ -50,7 +50,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from resh import induttivo                                    # _corpo/_payload/_OUT/_call/_postprocess
 from resh.tests.eval_trilemma import _wilson
 
-_DIR = Path(__file__).resolve().parent.parent / "Trilemma dataset"
+_DIR = Path(__file__).resolve().parent.parent / "dataset/trilemma"
 _OUT_DIR = Path(__file__).resolve().parent / "eval_out"
 
 # Mapping DERIVATO polarità gold → risposte al limite attese (M4, indicativo).

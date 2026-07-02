@@ -1,5 +1,5 @@
 """resh/tests/gen_report_distribuzione.py — ricalcola la sezione "Distribuzione
-finale" di Trilemma dataset/REPORT.md direttamente dai JSONL (fonte di verità),
+finale" di dataset/trilemma/REPORT.md direttamente dai JSONL (fonte di verità),
 invece di tenerla aggiornata a mano nel markdown.
 
 Trovato con questo script (2026-07): i conteggi CORNO/MODO in REPORT.md fase 7.1
@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-_DIR = Path(__file__).resolve().parent.parent / "Trilemma dataset"
+_DIR = Path(__file__).resolve().parent.parent / "dataset/trilemma"
 
 
 def _fmt(counter: Counter, totale: int) -> str:

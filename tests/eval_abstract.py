@@ -1,6 +1,6 @@
 """resh/tests/eval_abstract.py — eval LATO DETERMINISTICO del detector di termini astratti.
 
-Valuta `induttivo.pre_detect_abstract` contro il gold `Abstract dataset/` (F4 parziale,
+Valuta `induttivo.pre_detect_abstract` contro il gold `dataset/astratti/` (F4 parziale,
 collision-safe). Misura SOLO ciò che il detector *può* fare: la **recall** sui termini
 gold che gli competono (fonte_candidato suffisso|lessico) e la **sovra-generazione**.
 La classificazione del tipo di occultamento è induttiva (LLM) → eval separata, dopo F3.
@@ -28,7 +28,7 @@ import argparse
 
 from resh import astratti, induttivo
 
-_DIR = Path(__file__).resolve().parent.parent / "Abstract dataset"
+_DIR = Path(__file__).resolve().parent.parent / "dataset/astratti"
 
 
 def _carica(gold_path: Path) -> tuple[str, list[dict]]:

@@ -19,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-_DIR = Path(__file__).resolve().parent.parent / "Trilemma dataset"
+_DIR = Path(__file__).resolve().parent.parent / "dataset/trilemma"
 
 
 def _conta(path: Path) -> Counter:

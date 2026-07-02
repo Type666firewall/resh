@@ -151,7 +151,7 @@ _OUT_ARSENALE = (
     'narrativi e nel dubbio: null>"}'
 )
 
-# Vocabolario allineato a «Trilemma dataset/SCHEMA.md» v1.2. La distinzione di
+# Vocabolario allineato a «dataset/trilemma/SCHEMA.md» v1.2. La distinzione di
 # MODO (USE vs MENTION/DIAGNOSIS) è anti-falso-positivo: un testo CHE PARLA del
 # Trilemma non vi CADE. NB: il campo `inclosura` (Priest) è volutamente ESCLUSO —
 # è un modulo ortogonale da sotto-specializzare a parte, accantonato per ora.

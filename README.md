@@ -204,7 +204,7 @@ resh/
 ├── gamma/                                 moduli di analisi (annotazione, fallacie, bias, stilometria...)
 ├── lessici/                                lessici curati IT+EN (booster, hedging, connettivi, fallacie...)
 ├── prompts/                                prompt del lato induttivo (IT + EN), caricati a runtime
-├── Trilemma dataset/, Abstract dataset/    gold set annotati per calibrazione ed eval
+├── dataset/trilemma/, dataset/astratti/    gold set annotati per calibrazione ed eval
 ├── tests/                                  batterie di non-regressione ed eval
 ├── examples/                               testi ed esempi di report reali
 └── curate_dataset.py                       curazione manuale run → dataset per calibrazione futura

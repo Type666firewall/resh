@@ -26,7 +26,7 @@ dubbie che reggono ciascuna un pezzo marginale deve uscire basso.
 
 La root del repo è il package `resh` (layout flat, mappato via pyproject).
 Funziona, ma lo standard moderno è `src/resh/`. Da fare con calma: i test
-puntano a `Trilemma dataset/` e `Abstract dataset/` relativamente alla root.
+puntano a `dataset/trilemma/` e `dataset/astratti/` relativamente alla root.
 Beneficio solo estetico — non urgente.
 
 ## 3. Lessici e gold set EN

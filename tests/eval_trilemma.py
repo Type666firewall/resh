@@ -2,7 +2,7 @@
 
 Verifica la COERENZA del prompt induttivo del Trilemma (caricato da
 `prompts_resh.md`, single source of truth) contro le annotazioni gold del
-dataset «Trilemma dataset/». Per ogni passo gold usa il `testo` come φ isolato
+dataset «dataset/trilemma/». Per ogni passo gold usa il `testo` come φ isolato
 (coerente con l'annotazione, che è marker-based e O-agnostica) e confronta il
 `corno` e il `modo` predetti con quelli annotati.
 
@@ -30,7 +30,7 @@ from pathlib import Path
 from resh import config, induttivo
 
 
-_DATASET_DIR = Path(__file__).resolve().parent.parent / "Trilemma dataset"
+_DATASET_DIR = Path(__file__).resolve().parent.parent / "dataset/trilemma"
 
 
 # Obiettivo O a livello-DOCUMENTO (l'obiettivo dell'agente che ha prodotto il testo,

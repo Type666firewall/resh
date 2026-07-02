@@ -205,7 +205,7 @@ resh/
 ├── report.py                              deterministic report formatter
 ├── gamma/                                 analysis modules (annotation, fallacies, bias, stylometry...)
 ├── lessici/                                curated IT+EN lexicons (boosters, hedging, connectives, fallacies...)
-├── Trilemma dataset/, Abstract dataset/    annotated gold sets for calibration and eval
+├── dataset/trilemma/, dataset/astratti/    annotated gold sets for calibration and eval
 ├── tests/                                  non-regression batteries and evals
 ├── examples/                               sample texts and the real reports they produce
 └── curate_dataset.py                       manual run curation → dataset for future calibration

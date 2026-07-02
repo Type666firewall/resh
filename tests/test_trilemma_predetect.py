@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 from resh.induttivo import pre_detect_trilemma
 
 
-_DATASET_DIR = Path(__file__).resolve().parent.parent / "Trilemma dataset"
+_DATASET_DIR = Path(__file__).resolve().parent.parent / "dataset/trilemma"
 
 
 def _carica_gold() -> list[dict]:
