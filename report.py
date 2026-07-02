@@ -23,7 +23,7 @@ _COMP_LABELS = {
     "coesione_semantica":       "Coesione semantica",
     "coerenza_tematica":        "Coerenza tematica",
     "qualita_sintattica":       "Qualità sintattica",
-    "bias_linguistico":         "Bias linguistico",
+    "bias_linguistico":         "Assenza bias retorico (hedging/booster)",
     "credibilita_fonte":        "Credibilità fonte",
     "integrita_obiettivo":      "Integrità obiettivo",
 }
@@ -90,7 +90,8 @@ def _render_det(det: dict) -> list[str]:
     eps = det.get("eps_resh")
     fascia = _fascia_eps(eps)
     out.append(f"**ε = {eps}** (tenuta epistemica: {fascia})")
-    out.append(f"Densità logica: {det.get('densita_logica')} — fascia: {det.get('fascia_densita')}")
+    out.append(f"Densità di premesse implicite: {det.get('densita_logica')} — fascia: {det.get('fascia_densita')} "
+               "(premesse non dichiarate per token; descrittiva, non entra in ε)")
     comp = det.get("componenti_epsilon", {})
     if comp:
         out.append("\n### Componenti epsilon\n")
@@ -181,9 +182,23 @@ def _render_ind(ind: dict) -> list[str]:
                 out.append(f"- **C3 strumentale:** {llm['c3_strumentale_diagnostico']}")
             conf = tri.get("confronto")
             if conf:
+                conv = conf.get("convergenze", [])
+                dive = conf.get("divergenze", [])
                 out.append(f"- Confronto deterministico/induttivo: "
-                           f"convergenze {len(conf.get('convergenze', []))}, "
-                           f"divergenze {len(conf.get('divergenze', []))}")
+                           f"convergenze {len(conv)}, divergenze {len(dive)}")
+                # Disaccordo mostrato, non solo contato: ogni divergenza con il
+                # suo ancoraggio testuale, così il lettore giudica da sé.
+                for d in dive[:10]:
+                    det_lato = d.get("sottotipo_det") or d.get("corno_det") or "—"
+                    llm_lato = d.get("corno_llm") or "—"
+                    riga = f"  - ⚡ deterministico: `{det_lato}` vs LLM: `{llm_lato}`"
+                    if d.get("span"):
+                        riga += f" — «{d['span']}»"
+                    if d.get("nota"):
+                        riga += f" ({d['nota']})"
+                    out.append(riga)
+                if len(dive) > 10:
+                    out.append(f"  - … e altre {len(dive) - 10} divergenze (vedi JSON)")
     inc = ind.get("inclosura") or {}
     if inc and "errore" not in inc:
         llm = inc.get("llm", {})

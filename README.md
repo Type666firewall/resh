@@ -1,5 +1,7 @@
 # ऋ (resh) — analisi critico-epistemica di testi
 
+> 🇬🇧 English version: [README.en.md](README.en.md)
+
 resh legge un testo (o un intero documento) e risponde a una domanda sola: **quanto regge,
 epistemicamente, quello che sto leggendo?** Non dice se è vero o falso — cerca dogmi non
 dichiarati, premesse occultate, salti logici, fallacie, circolarità, e un punteggio
@@ -82,6 +84,45 @@ from resh import analizza
 r = analizza("Everyone knows this policy is inevitable, so it must be supported.", lang="en")
 print(r.eps_resh, r.patologie)
 ```
+
+## Come leggere un report
+
+Il report ha due lati, tenuti separati per costruzione — sapere quale numero viene da dove è
+metà della lettura.
+
+**ε_ऋ (il numero, lato deterministico).** Media geometrica pesata dei componenti, tra 0 e 1:
+più alto = argomentazione strutturalmente più solida. Misura la *tenuta* (fallacie, salti
+logici, premesse occultate, coerenza), **non la verità**: un testo falso può reggere bene, uno
+vero può reggere male. Fasce indicative: ≥0.85 alta, ≥0.65 media, ≥0.40 bassa, sotto critica.
+
+**Componenti.** Ognuno tra 0 e 1, e **alto è sempre buono** — anche per i componenti nominati
+in negativo: "Assenza fallacie" o "Assenza bias retorico" a 1.0 significano testo pulito. La
+*Genesi* riordina i componenti per erosione (quanto ciascuno abbassa ε) e vi allega le
+patologie che li causano: è il punto da cui partire per capire *perché* ε è quello che è.
+
+**Patologie.** Ogni rilievo porta `sev` (gravità) e `conf` (fiducia) e la fonte che l'ha
+prodotto (`regex`, `nli_zeroshot`, `entailment strutturale`...). Attenzione al campo
+`confermata`: solo le patologie confermate da più segnali indipendenti sono verdetti; le
+altre sono **candidate** — segnalazioni da verificare a occhio, non condanne.
+
+**Densità premesse implicite.** Quante premesse non dichiarate per token. Metrica descrittiva
+(non entra in ε): "bassa" per un testo lungo è un buon segno, non un difetto.
+
+**Lato induttivo (solo con `--induttivo`).** Giudizi LLM *a parità di ruolo*: affiancano il
+numero, non lo modificano mai. Include: l'**Obiettivo** dichiarato/latente dell'autore con la
+loro coerenza; l'**arsenale critico** (posizione dell'osservatore, autoreferenzialità,
+autosufficienza semantica) e gli assi r0-r9; il **Trilemma di Münchhausen** — ogni catena di
+giustificazione termina in regresso infinito (C1), circolarità (C2) o arresto dogmatico (C3),
+con il *modo*: USE = il testo ci cade, MENTION = ne parla, DIAGNOSIS = lo diagnostica in
+altri; l'**inclosura** (schema di Priest) sui limiti del pensiero; la **diagnosi di
+malafede** sullo scarto dichiarato↔latente — segnale, mai verdetto.
+
+**Il disaccordo è un dato.** Se il lato deterministico e quello induttivo divergono (es. sul
+corno del trilemma), il report **mostra** le divergenze con i passi contesi invece di
+riconciliarle: nessuno dei due lati ha l'ultima parola.
+
+**Onestà sui fallimenti.** Ogni call LLM fallita compare come "contributo scartato" con
+l'errore: un report con 14 errori dichiarati è un report onesto, non un report rotto.
 
 ## Modelli — cosa consigliamo
 

@@ -591,15 +591,24 @@ def pre_detect_abstract(testo: str) -> list[dict]:
 
 
 def _serialize_pre_hits(pre_hits: list[TrilemmaHit]) -> str:
-    """Serializza i pre-hit come contesto informativo per il prompt LLM."""
+    """Serializza i pre-hit come CANDIDATI da giudicare nel prompt LLM.
+
+    Non contesto facoltativo: il giudizio deve rendere conto di ogni candidato,
+    altrimenti il lessico deterministico viene scavalcato in silenzio (visto
+    accadere: il «si deve credere» di Berkeley §3 ignorato da due modelli)."""
     if not pre_hits:
         return ""
-    lines = ["Pre-detection deterministica (marker lessicali e segnali strutturali):"]
+    lines = ["Candidati pre-rilevati dal lato deterministico (marker lessicali e "
+             "segnali strutturali). NON sono contesto facoltativo: valutali UNO PER UNO."]
     for h in pre_hits[:15]:  # cap a 15 per non gonfiare il prompt
         lines.append(f"  - {h.corno}/{h.sottotipo} (conf={h.confidence:.2f}, "
                      f"fonte={h.fonte}): «{h.span_testo[:80]}»")
     lines.append("NB: i marker indicano PRESENZA lessicale, non MODO (USE/MENTION). "
                  "Un testo che PARLA di un corno contiene i marker senza CADERE nel corno.")
+    lines.append("VINCOLO: in `descrizione_catena` rendi conto dei candidati sopra — "
+                 "se il corno o il punto di arresto che scegli diverge dal candidato "
+                 "più forte, dichiara esplicitamente perché lo rigetti, citando il "
+                 "passo. Un candidato ignorato in silenzio è un errore di analisi.")
     return "\n".join(lines)
 
 

@@ -40,8 +40,8 @@ def _build_markdown(rapporto, nome_documento: str) -> str:
     md.append(f"**Documento:** `{nome_documento}`\n")
     md.append("## Metriche Globali")
     md.append(f"- **ε_ऋ:** `{rapporto.eps_resh:.4f}`")
-    md.append(f"- **Densità Logica:** `{rapporto.densita_logica:.4f}` (Fascia: *{rapporto.fascia_densita}*)")
-    md.append(f"- **Modificatore Malafede:** `{rapporto.malafede_mod:.4f}`\n")
+    md.append(f"- **Densità premesse implicite:** `{rapporto.densita_logica:.4f}` (Fascia: *{rapporto.fascia_densita}* — descrittiva, non entra in ε)")
+    md.append(f"- **Modificatore Malafede:** `{rapporto.malafede_mod:.4f}` (storico, disattivato: sempre 1.0)\n")
 
     md.append("## Profilo Linguistico (Profiling-UD-style)")
     for k, v in rapporto.profilo_linguistico.items():

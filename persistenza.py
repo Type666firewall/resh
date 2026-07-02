@@ -499,10 +499,11 @@ def _format_run_markdown(
     add("")
     add(f"- **run_uid**: `{run['run_uid']}`")
     add(f"- **ε_ऋ** = `{run['eps_resh']:.4f}` ({run['eps_stato']})")
-    add(f"- **fascia_densita** = `{run['fascia_densita']}` "
-        f"(densita_logica={run['densita_logica']:.4f}) — descrittiva, non modula ε")
+    add(f"- **densità premesse implicite** = `{run['densita_logica']:.4f}` "
+        f"(fascia: {run['fascia_densita']}) — premesse non dichiarate per token; "
+        f"descrittiva, non modula ε")
     add(f"- **malafede_mod** = `{run['malafede_mod']:.4f}` "
-        f"{'(FROZEN no-op)' if run['malafede_mod'] == 1.0 else ''}")
+        f"{'(storico, disattivato: sempre 1.0)' if run['malafede_mod'] == 1.0 else ''}")
     add(f"- **backend annotazione** = `{run.get('backend_annotazione','?')}` · "
         f"**backend fuzzy** = `{run.get('backend_fuzzy','?')}`")
     add(f"- **modello** = `{run.get('model_used','-')}` · "
