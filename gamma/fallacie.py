@@ -20,6 +20,7 @@ import json
 import logging
 import re
 from pathlib import Path
+from typing import Optional
 
 from . import _nli
 from .annotazione import AnnotatedDoc
@@ -122,11 +123,63 @@ def _regex_fallacies(testo: str) -> list[Patologia]:
                     "fallacia_l2": meta["tipo"],
                     "match":       m.group(0),
                     "fonte":       f"regex_{lang}",
-                    "confermata":  True,            # regex ad alta precisione
+                    # A2 (2026-07): un match regex NON è più un verdetto per sé.
+                    # `confermata` viene deciso a valle da `_conferma_via_nli`
+                    # (co-occorrenza con l'NLI). Default False finché non confermato.
+                    "confermata":  False,
                 },
                 origine_modulo = "fallacie",
             ))
     return found
+
+
+def _conferma_via_nli(regex_pats: list[Patologia], nli_pats: list[Patologia],
+                      sentence_spans: list[tuple[int, int]]) -> None:
+    """Marca in-place `confermata` sui regex (A2, 2026-07).
+
+    Un regex è `confermata=True` **iff** l'NLI ha rilevato la STESSA `fallacia_l2`
+    nella STESSA frase — il criterio è la conferma indipendente (README: «verdetti
+    = più segnali indipendenti»), non l'essere-regex. Era l'intento originale del
+    file: «i regex vengono confermate/integrate dal classifier NLI».
+
+    Senza NLI (backend degradato / nessun candidato → `nli_pats` vuoto) nessun
+    regex è confermato: niente modello, niente verdetti di fallacia (coerente con
+    l'onestà dichiarata di resh in modalità degradata).
+
+    `sentence_spans`: [(start_char, end_char), …] da `doc.sentences`, per mappare lo
+    span del match alla frase. Se il mapping fallisce (offset ignoti, es. fallback
+    con span 0), si ricade su un confronto doc-level per tipo.
+    """
+    nli_by_frase: set[tuple[int, str]] = set()
+    nli_types: set[str] = set()
+    for p in nli_pats:
+        l2 = p.dettaglio.get("fallacia_l2")
+        if not l2:
+            continue
+        nli_types.add(l2)
+        idx = p.dettaglio.get("idx_frase")
+        if idx is not None:
+            nli_by_frase.add((int(idx), l2))
+
+    def _frase_di(span: Optional[tuple[int, int]]) -> Optional[int]:
+        if not span:
+            return None
+        start = span[0]
+        for i, (s, e) in enumerate(sentence_spans):
+            if e > s and s <= start < e:
+                return i
+        return None
+
+    for p in regex_pats:
+        l2 = p.dettaglio.get("fallacia_l2")
+        if not l2:
+            p.dettaglio["confermata"] = False
+            continue
+        idx = _frase_di(p.span_char)
+        if idx is not None:
+            p.dettaglio["confermata"] = (idx, l2) in nli_by_frase
+        else:
+            p.dettaglio["confermata"] = l2 in nli_types   # fallback doc-level
 
 
 def _frasi_con_marker(doc: AnnotatedDoc) -> list[tuple[int, str]]:
@@ -220,9 +273,12 @@ def rileva_fallacie(doc: AnnotatedDoc, *, threshold: float = 0.55) -> list[Patol
     """Ritorna lista deduplicata di patologie FALLACIA_LOGICA.
 
     threshold: soglia confidence per accettare risultato NLI (default 0.55,
-    calibrato per deberta-v3-base-zeroshot-v2.0). Regex sono sempre inclusi
-    (precisione alta per costruzione).
+    calibrato per deberta-v3-base-zeroshot-v2.0). Regex sono sempre inclusi come
+    CANDIDATI; diventano `confermata` solo se l'NLI conferma la stessa fallacia
+    nella stessa frase (`_conferma_via_nli`, A2).
     """
     regex_pats = _regex_fallacies(doc.text)
     nli_pats   = _dedup_per_frase(_nli_fallacies(doc, threshold=threshold))
+    sentence_spans = [(s.start_char, s.end_char) for s in doc.sentences]
+    _conferma_via_nli(regex_pats, nli_pats, sentence_spans)
     return _dedup(regex_pats + nli_pats)

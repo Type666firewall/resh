@@ -1,8 +1,9 @@
 ﻿"""resh/bias_autorita.py — NER + lessico hedging/booster + ad verecundiam.
 
 Rileva:
-  - hedging_ratio  = #hedges / n_token  → bias verso indeterminatezza
-  - booster_ratio  = #boosters / n_token → bias verso assolutismo (petitio)
+  - hedging_ratio  = #hedges / n_token  → SEGNALE DESCRITTIVO (provvisorietà
+    fallibilista, non un bias): rilevato e visibile, ma NON erode ε (B1, 2026-07)
+  - booster_ratio  = #boosters / n_token → bias verso assolutismo (petitio) → ε
   - pattern ad_verecundiam non-citato (NER PER + verbo dicendi + no quote)
   - bias multipli accumulati → flag su `AutoritaCriteri.bias_rilevati`
 
@@ -156,16 +157,24 @@ def analizza_bias_autorita(testo: str, doc: AnnotatedDoc) -> tuple[AutoritaCrite
     # AutoritaCriteri legacy
     persone = _persone_da_doc(doc)
     fonte_label = persone[0] if persone else "sconosciuta"
-    # expertise: euristica conservativa — true solo se citata 1+ PER nominata
-    expertise = bool(persone)
+    # expertise (A5, 2026-07): un nome proprio da solo NON è expertise — anche il
+    # soggetto del testo («Berkeley», «Socrate») è un nome. Serve un nome NOMINATO
+    # con un segnale di citazione (virgolette o riferimento bibliografico), non la
+    # sua mera presenza. Riusa i marcatori già rilevati sul testo.
+    ha_citazione = bool(re.search(r"[\"«»“”']", testo) or
+                        re.search(r"\((?:cf|cfr|vedi|in)\.?\s+", testo, re.I))
+    expertise = bool(persone) and ha_citazione
 
-    # credibilità: baseline neutro-positivo, penalità per bias, bonus per testo pulito
+    # credibilità: baseline neutro-positivo, penalità SOLO per autorità non citata
+    # (ad_verecundiam), bonus per testo pulito. NON reagisce più a hedge/booster
+    # (B1+A1, 2026-07): l'hedging è fallibilismo (non bias), e il booster è già
+    # penalizzato una volta sola in `bias_linguistico` — qui era doppio conteggio
+    # su due componenti di ε. `credibilita_fonte` misura ora SOLO l'autorità/fonte,
+    # coerente col suo nome.
     credibilita = 0.65
-    credibilita -= 0.15 * (hedging_ratio > 0.06)
-    credibilita -= 0.20 * (booster_ratio > 0.04)
     credibilita -= 0.20 * (1 if fonti_invocate else 0)
-    if not (hedging_ratio > 0.06 or booster_ratio > 0.04 or fonti_invocate):
-        credibilita += 0.10   # testo senza bias rilevati → premio epistemico
+    if not fonti_invocate:
+        credibilita += 0.10   # nessuna autorità non citata → premio epistemico
     credibilita  = max(0.05, min(0.95, credibilita))
 
     autorita = AutoritaCriteri(

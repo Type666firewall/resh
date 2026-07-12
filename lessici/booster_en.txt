@@ -1,3 +1,9 @@
+# A3 (Mill, A System of Logic): logical quantifiers/modals — all, none, always,
+# never, necessarily — do NOT belong here. They are constitutive of valid argument
+# (a syllogism uses them by construction), not rhetorical emphasis. The circularity
+# Mill ascribes to universal quantification (the syllogism is a petitio: the major
+# premise already contains the conclusion) is the business of the circularity axis
+# (Trilemma C₂ vicious/virtuous, circular_reasoning), not of rhetorical bias.
 obviously
 certainly
 undoubtedly
@@ -20,11 +26,6 @@ incontrovertibly
 surely
 notoriously
 indisputably
-necessarily
-always
-never
-all
-none
 totally
 completely
 absolutely certain

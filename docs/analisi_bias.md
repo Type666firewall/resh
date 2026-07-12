@@ -75,9 +75,17 @@ Ne segue una tensione *interna* a ε: `validita_formale` premia il sillogismo va
 rendono valido. Due componenti dello stesso numero tirano in direzioni opposte sullo stesso
 tratto.
 
-**Correzione proposta.** Separare i quantificatori/modali logici dai booster retorici (lista a
-parte, peso nullo o condizionato alla posizione retorica e non di premessa). L'omologo inglese
-(`booster_en.txt`: «all», «none», «always», «never», «necessarily») ha lo stesso difetto.
+**Correzione proposta (raffinata, Mill).** Il punto **non** è che i quantificatori siano
+epistemicamente innocenti. Per J. S. Mill (*A System of Logic*) il sillogismo **è** una petitio:
+«tutti gli uomini sono mortali» non è asseribile senza aver già incluso Socrate, quindi la
+conclusione è già certificata nella premessa — e lo stesso vale nel ragionamento empirico. La
+correzione giusta è quindi *ri-collocare* il segnale, non cancellarlo: togliere i quantificatori
+dal lessico **booster** (non sono enfasi retorica) e lasciare che la loro eventuale circolarità
+sia giudicata dove resh già la tratta — l'asse della circolarità (Trilemma **C₂** viziosa/
+virtuosa, `circular_reasoning`), coerente col suo stesso assioma `ऋ¹`. Nessun nuovo
+penalizzatore: gli usi fallaci contestuali («tutti sanno») restano catturati dai pattern
+fallacia. L'omologo inglese (`booster_en.txt`: «all», «none», «always», «never», «necessarily»)
+ha lo stesso difetto e la stessa correzione.
 
 ### A4. `qualita_sintattica`: ottimi hardcoded tarati su un solo registro
 
@@ -220,6 +228,37 @@ che è un *registro*, non una virtù epistemica, e che a tratti contraddice la s
 del dubbio. La correzione più densa è B1: distinguere, nel numero, la cautela dall'assolutismo —
 perché è lì che resh, oggi, tradisce se stesso.
 
-Nessuna di queste correzioni è stata applicata: modificano il comportamento di `ε_ऋ` e vanno
-decise (quali, con che pesi) e verificate sul corpus di stress prima di toccare la metrica.
-Questa analisi le individua e le motiva; l'implementazione è il passo successivo.
+---
+
+## Correzioni applicate (2026-07)
+
+Le correzioni sono state implementate su questo branch. Riepilogo di *cosa* è cambiato e *dove*:
+
+- **B1 — hedging fuori da ε.** `core.py::_bias_linguistico_score` reagisce ora solo a
+  `BOOSTER_ECCESSIVO`; `_COMPONENTE_PATOLOGIE["bias_linguistico"]` non mappa più l'hedging;
+  `bias_autorita.py` non abbassa più `credibilita` per l'hedging. L'hedging resta rilevato e
+  visibile (segnale descrittivo), ma non erode ε.
+- **A1 — fine del doppio conteggio.** `bias_autorita.py`: `credibilita_fonte` non reagisce più
+  a hedge/booster (il booster resta penalizzato una sola volta, in `bias_linguistico`). *Residuo
+  noto:* `ad_verecundiam` è ancora rilevato sia come fallacia (`assenza_fallacie`) sia come
+  `APPELLO_AUTORITA` (`credibilita_fonte`) — cross-count minore lasciato invariato per non
+  allargare lo scope.
+- **A2 — `confermata` = conferma NLI.** `fallacie.py::_conferma_via_nli`: un match regex diventa
+  verdetto solo se l'NLI conferma la stessa fallacia nella stessa frase; senza NLI (backend
+  degradato) resta candidato. La circolarità *strutturale* (mutuo-entailment) è un canale a
+  parte, invariato.
+- **A3 — quantificatori fuori dai booster (Mill).** Rimossi `tutti/nessuno/sempre/mai/
+  necessariamente` (IT) e `all/none/always/never/necessarily` (EN) dai lessici booster, con nota
+  Mill in testa: la loro circolarità è competenza dell'asse C₂, non del bias retorico.
+- **A4 — Gulpease per lingua.** `profilo_linguistico.py::qualita_sintattica` esclude il Gulpease
+  (formula IT) sui testi EN e rinormalizza i pesi. Ottimi IT depth/sub non ritarati (serve gold
+  set) ma documentati come register-sensitive.
+- **A5 — expertise reale.** `bias_autorita.py`: `expertise = bool(persone) and ha_citazione` (un
+  nome senza citazione/riferimento non è expertise).
+- **B2 / B3 — report onesto.** `report.py`: costante `POSTURA_RESH` (lente non-fondazionalista
+  dichiarata in testa) e `CAVEAT_EPS` (pesi provvisori, non calibrati; register-sensitivity).
+
+**Effetto atteso su ε:** aumenta su testi con hedging fitto e su sillogismi/quantificatori
+(dubbio e forma logica non più puniti) — è l'esito voluto. I riferimenti ε storici restano non
+confrontabili coi run successivi (già dichiarato in `epsilon.py`). Le batterie ML di
+calibrazione su corpus più ampio restano il passo di raffinamento successivo.

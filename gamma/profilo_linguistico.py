@@ -163,6 +163,18 @@ def qualita_sintattica(profilo: dict) -> Optional[float]:
     Usato come componente 'qualità_sintattica' in epsilon.py. Curva ad
     arco: testi troppo semplici (Gulpease>80, MTLD<30) e troppo barocchi
     (depth>8, sub_ratio>1.5) sono entrambi penalizzati.
+
+    REGISTER-SENSITIVE (limite noto, come `struttura_argomentativa`): gli ottimi
+    depth≈4.5 / sub≈0.6 sono di un registro espositivo contemporaneo; la prosa
+    classica a periodi lunghi (alta subordinazione/profondità) è in parte
+    penalizzata da artefatto di segmentazione, non da difetto reale — va letta con
+    gli altri componenti. Il retuning richiede un gold set di calibrazione (non si
+    inventano numeri a priori: il sistema si raffina nel tempo). Il report dichiara
+    questa provvisorietà (B2).
+
+    LINGUA: il Gulpease è una formula tarata sull'ITALIANO — su testi EN è
+    miscalibrato, quindi viene ESCLUSO e i pesi rinormalizzati sui tre restanti
+    (A4, 2026-07).
     """
     # Evidenza insufficiente: la stilometria (MTLD, depth, sub_ratio) non è
     # affidabile sotto ~30 token → ritorna None = «non misurabile», così
@@ -172,15 +184,23 @@ def qualita_sintattica(profilo: dict) -> Optional[float]:
     if profilo.get("n_token", 0) < 30:
         return None
 
+    from .. import config
+    lang = config.LANG.get()
+
     mtld     = profilo.get("mtld", 0.0)
     sub      = profilo.get("subordination_ratio", 0.0)
     depth    = profilo.get("profondita_media_albero", 0.0)
-    gulpease = profilo.get("gulpease", 50.0)
 
     mtld_score   = min(1.0, max(0.0, (mtld - 30.0) / 60.0))     # 30→0, 90→1
     depth_score  = 1.0 - min(1.0, abs(depth - 4.5) / 4.5)       # ottimo @ ~4.5
     sub_score    = 1.0 - min(1.0, abs(sub - 0.6) / 0.6)         # ottimo @ ~0.6
-    gulp_score   = 1.0 - min(1.0, abs(gulpease - 55.0) / 35.0)  # ottimo @ ~55
 
+    if lang == "en":
+        # Gulpease escluso (formula IT): rinormalizza 0.35/0.25/0.20 → Σ=1.
+        return round((0.35 * mtld_score + 0.25 * depth_score
+                      + 0.20 * sub_score) / 0.80, 4)
+
+    gulpease   = profilo.get("gulpease", 50.0)
+    gulp_score = 1.0 - min(1.0, abs(gulpease - 55.0) / 35.0)    # ottimo @ ~55
     return round(0.35 * mtld_score + 0.25 * depth_score
                  + 0.20 * sub_score + 0.20 * gulp_score, 4)

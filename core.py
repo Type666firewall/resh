@@ -527,10 +527,18 @@ async def analizza_async(
 
 
 def _bias_linguistico_score(bias_pats: list[Patologia]) -> float:
-    """1.0 - max severita patologie hedging/booster (cap a 1.0)."""
+    """1.0 - max severita patologie BOOSTER (cap a 1.0).
+
+    Solo il boosting (assolutismo / petitio: «ovviamente», «indubbiamente»)
+    erode ε: è la mossa che la critica ai dogmi punisce. L'HEDGING
+    («forse», «sembra», «potrebbe») è il marcatore della provvisorietà
+    fallibilista che l'asse ऋ⁷ *loda* — non è un bias e NON abbassa ε
+    (B1, 2026-07). Resta rilevato e visibile come segnale descrittivo; la
+    distinzione cautela↔evasività (weasel) spetta all'induttivo
+    (diagnosi_malafede), non al conteggio deterministico.
+    """
     rilevanti = [p.severita for p in bias_pats
-                 if p.tipo in {TipoPatologia.HEDGING_ECCESSIVO,
-                               TipoPatologia.BOOSTER_ECCESSIVO}]
+                 if p.tipo is TipoPatologia.BOOSTER_ECCESSIVO]
     if not rilevanti:
         return 1.0
     return round(max(0.0, 1.0 - max(rilevanti)), 4)
@@ -546,7 +554,7 @@ _COMPONENTE_PATOLOGIE: dict[str, set] = {
                              TipoPatologia.DENSITA_CRITICA},
     "coerenza_tematica":    {TipoPatologia.INCOERENZA_TEMATICA, TipoPatologia.DERIVA_REGISTRO},
     "coesione_semantica":   {TipoPatologia.INCOERENZA_LOCALE},
-    "bias_linguistico":     {TipoPatologia.HEDGING_ECCESSIVO, TipoPatologia.BOOSTER_ECCESSIVO},
+    "bias_linguistico":     {TipoPatologia.BOOSTER_ECCESSIVO},   # hedging non erode ε (B1)
     "credibilita_fonte":    {TipoPatologia.APPELLO_AUTORITA},
     "integrita_obiettivo":  {TipoPatologia.OBIETTIVO_CONTRADDITTORIO, TipoPatologia.OBIETTIVO_DISPERSO},
 }

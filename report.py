@@ -15,6 +15,23 @@ from __future__ import annotations
 from typing import Optional
 
 
+# B3 — la lente di resh dichiarata in testa al report, come resh esige dai testi.
+POSTURA_RESH = (
+    "> **Postura di resh:** analisi non-fondazionalista; il framework SA{ऋ} "
+    "(ऋ¹ infondabilità operativa, ऋ² vuoto ontologico, ऋ⁶ contingenza dei "
+    "significati) è un **C₃ strumentale dichiarato**, non un fondamento — resh è "
+    "soggetto agli stessi assi che applica."
+)
+
+# B2 — la provvisorietà che vive nei commenti-codice, resa visibile: niente
+# precisione spuria (è la «certezza operativa non dichiarata» che resh segnala altrove).
+CAVEAT_EPS = (
+    "*Pesi di ε provvisori, non ancora calibrati su gold set; «qualità sintattica» "
+    "e «struttura argomentativa» risentono del registro d'epoca — leggere ε come "
+    "indicativo, non assoluto.*"
+)
+
+
 _COMP_LABELS = {
     "trasparenza_premesse":     "Trasparenza premesse",
     "validita_formale":         "Validità formale (sequitur)",
@@ -278,12 +295,15 @@ def genera_report_documento(rap_doc, *, run_uid: str = "") -> str:
         f"**Call LLM:** {meta.get('call_eseguite')}  ·  {meta.get('ts')}"
         + (f"  ·  **Run:** `{run_uid}`" if run_uid else ""),
         "",
+        POSTURA_RESH,
+        "",
     ]
 
     # Executive summary in testa
     head.append("## Riepilogo\n")
     fascia = _fascia_eps(eps_doc)
     head.append(f"**Epsilon documento: {eps_doc}** (tenuta epistemica: {fascia})")
+    head.append(CAVEAT_EPS)
     if O and "errore" not in O:
         head.append(f"\n**Obiettivo:** «{O.get('dichiarato', '?')}»")
     if sd:
@@ -371,12 +391,15 @@ def genera_report(det: Optional[dict] = None, ind: Optional[dict] = None,
         + (f"  ·  **Run:** `{run_uid}`" if run_uid else "")
         + (f"  ·  {ts}" if ts else ""),
         "",
+        POSTURA_RESH,
+        "",
     ]
 
     # Executive summary
     if eps is not None:
         head.append("## Riepilogo\n")
         head.append(f"**Epsilon: {eps}** (tenuta epistemica: {fascia})")
+        head.append(CAVEAT_EPS)
         pat = (det or {}).get("patologie", [])
         if pat:
             head.append(f"  ·  Patologie rilevate: {len(pat)}")
