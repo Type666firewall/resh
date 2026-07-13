@@ -15,7 +15,7 @@ Componenti (9) e pesi default (ricalibrati Σ_w 2026-06-12, triage F2):
   coesione_semantica        0.12    (coerenza.coesione_locale)
   coerenza_tematica         0.08    (coerenza.coerenza_tematica_score)
   qualita_sintattica        0.10    (profilo_linguistico.qualita_sintattica)
-  bias_linguistico          0.08    (1 - max(hedge_ratio, booster_ratio)/0.1)
+  bias_linguistico          0.08    (1 - booster_ratio/0.1; hedging NON erode — B1)
   credibilita_fonte         0.07    (autorita.credibilita)
 
 NB: `validita_formale` (entailment) e `assenza_fallacie` (MAFALDA) sono assi

@@ -1,3 +1,9 @@
+# A3 (Mill, A System of Logic): i quantificatori/modali logici — tutti, nessuno,
+# sempre, mai, necessariamente — NON stanno qui. Sono costitutivi dell'argomentazione
+# valida (un sillogismo li usa per costruzione), non enfasi retorica. La circolarità
+# che Mill attribuisce alla quantificazione universale (il sillogismo è petitio: la
+# premessa maggiore include già la conclusione) è competenza dell'asse circolarità
+# (Trilemma C₂ viziosa/virtuosa, circular_reasoning), non del bias retorico.
 ovviamente
 certamente
 indubbiamente
@@ -21,11 +27,6 @@ sicuramente
 notoriamente
 indiscutibilmente
 pacificamente
-necessariamente
-sempre
-mai
-tutti
-nessuno
 totalmente
 completamente
 assolutamente certo
