@@ -38,6 +38,11 @@ it stands on itself.
 
 ## How it works, in short
 
+resh is an **analysis tool, not an agent**: you invoke it (CLI, library, or MCP server), it
+computes, it returns a report — no conversational loop, no goal pursued on its own. The agentic
+form (a system that evaluates and re-evaluates its own representations over time) is the
+direction of the theoretical model, not a present capability.
+
 resh looks at every text with **two independent instruments, on equal footing** — they are
 never merged into a single verdict:
 
@@ -125,13 +130,17 @@ medium, ≥0.40 low, below that critical.
 
 **Components.** Each between 0 and 1, and **high is always good** — including the
 negatively-named ones: "Absence of fallacies" or "Absence of rhetorical bias" at 1.0 mean a
-clean text. The *Genesis* section reorders components by erosion (how much each one lowers
-ε) and attaches the pathologies causing it: start there to understand *why* ε is what it is.
+clean text. "Absence of rhetorical bias" penalizes **absolutism** (boosters: "obviously",
+"undoubtedly"), **not** hedging: "perhaps", "seems", "might" are fallibilism, and resh does not
+count them as a defect — that would punish the very doubt it claims to serve. The *Genesis*
+section reorders components by erosion (how much each one lowers ε) and attaches the pathologies
+causing it: start there to understand *why* ε is what it is.
 
 **Pathologies.** Every finding carries `sev` (severity), `conf` (confidence) and the source
 that produced it (`regex`, `nli_zeroshot`, structural entailment...). Mind the `confermata`
 field: only pathologies confirmed by multiple independent signals are verdicts; the rest are
-**candidates** — flags to check by eye, not convictions.
+**candidates** — flags to check by eye, not convictions. A regex match, for example, becomes a
+verdict only if NLI confirms the same fallacy in the same sentence.
 
 **Implicit-premise density.** How many undeclared premises per token. A descriptive metric
 (it does not enter ε): "low" on a long text is a good sign, not a flaw.
@@ -156,7 +165,9 @@ its error: a report declaring 14 errors is an honest report, not a broken one.
 ## Open questions
 
 resh is an evolving project, and a tool that diagnoses hidden dogmas cannot afford to hide
-its own: the deliberately provisional choices live here.
+its own: the deliberately provisional choices live here. The full analysis of resh's known
+biases — in the code and in the agent's self-coherence — together with the fixes applied is in
+[`docs/analisi_bias.md`](docs/analisi_bias.md).
 
 - **The inventory of argumentative units is noisy.** Clause segmentation breaks up long
   periods — classical prose suffers more than contemporary writing — and fragments or
@@ -164,9 +175,11 @@ its own: the deliberately provisional choices live here.
   every line shows the classifier's `conf`: below ~0.7, treat it as a weak flag. Under
   evaluation: collapsing units with no recognizable connectives into a count, keeping the
   detail in the JSON.
-- **`struttura_argomentativa` is sensitive to period style.** On long-period texts the low
-  value is partly a segmentation artifact, not a defect of the text: read it together with
-  the other components, never alone.
+- **`struttura_argomentativa` and `qualità_sintattica` are sensitive to period style.** On
+  long-period texts the low value is partly a segmentation artifact, and partly the effect of
+  stylistic optima tuned on a contemporary register — not a defect of the text: read them
+  together with the other components, never alone. Gulpease (an Italian readability formula) is
+  excluded from the score on EN texts; the optima still need recalibration on a gold set.
 - **LLM judgments can smuggle in an undeclared philosophical frame** — for instance reading
   an idealist by the yardstick of an implicit realism. Current mitigation: the deterministic
   pre-detect candidates must be adjudicated one by one, and rejecting one must be motivated
@@ -225,6 +238,7 @@ resh/
 ├── dataset/trilemma/, dataset/astratti/    annotated gold sets for calibration and eval
 ├── tests/                                  non-regression batteries and evals
 ├── examples/                               sample texts and the real reports they produce
+├── docs/analisi_bias.md                    bias analysis (code + self-coherence) and fixes
 └── curate_dataset.py                       manual run curation → dataset for future calibration
 ```
 

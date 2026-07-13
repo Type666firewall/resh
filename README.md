@@ -39,6 +39,11 @@ cosa si regge lui.
 
 ## Come funziona, in breve
 
+resh è uno **strumento di analisi, non un agente**: lo invochi (CLI, libreria o server MCP),
+calcola, restituisce un report — nessun loop conversazionale, nessun obiettivo perseguito da
+solo. La forma agentiva (un sistema che nel tempo valuta e ri-valuta le proprie
+rappresentazioni) è la direzione del modello teorico, non una capacità presente.
+
 resh guarda ogni testo con **due strumenti indipendenti, a pari dignità** — non si fondono
 mai in un unico verdetto:
 
@@ -125,14 +130,18 @@ logici, premesse occultate, coerenza), **non la verità**: un testo falso può r
 vero può reggere male. Fasce indicative: ≥0.85 alta, ≥0.65 media, ≥0.40 bassa, sotto critica.
 
 **Componenti.** Ognuno tra 0 e 1, e **alto è sempre buono** — anche per i componenti nominati
-in negativo: "Assenza fallacie" o "Assenza bias retorico" a 1.0 significano testo pulito. La
-*Genesi* riordina i componenti per erosione (quanto ciascuno abbassa ε) e vi allega le
-patologie che li causano: è il punto da cui partire per capire *perché* ε è quello che è.
+in negativo: "Assenza fallacie" o "Assenza bias retorico" a 1.0 significano testo pulito.
+«Assenza bias retorico» penalizza l'**assolutismo** (booster: «ovviamente», «indubbiamente»),
+**non** l'hedging: «forse», «sembra», «potrebbe» sono fallibilismo, e resh non li conta come
+difetto — sarebbe punire proprio il dubbio che dichiara di voler servire. La *Genesi* riordina
+i componenti per erosione (quanto ciascuno abbassa ε) e vi allega le patologie che li causano:
+è il punto da cui partire per capire *perché* ε è quello che è.
 
 **Patologie.** Ogni rilievo porta `sev` (gravità) e `conf` (fiducia) e la fonte che l'ha
 prodotto (`regex`, `nli_zeroshot`, `entailment strutturale`...). Attenzione al campo
 `confermata`: solo le patologie confermate da più segnali indipendenti sono verdetti; le
-altre sono **candidate** — segnalazioni da verificare a occhio, non condanne.
+altre sono **candidate** — segnalazioni da verificare a occhio, non condanne. Un match regex,
+per esempio, diventa verdetto solo se l'NLI conferma la stessa fallacia nella stessa frase.
 
 **Densità premesse implicite.** Quante premesse non dichiarate per token. Metrica descrittiva
 (non entra in ε): "bassa" per un testo lungo è un buon segno, non un difetto.
@@ -157,6 +166,8 @@ l'errore: un report con 14 errori dichiarati è un report onesto, non un report 
 
 resh è un progetto in evoluzione, e un tool che diagnostica dogmi nascosti non può
 permettersi di nasconderne di propri: le scelte dichiaratamente provvisorie stanno qui.
+L'analisi completa dei bias noti — nel codice e nell'auto-coerenza dell'agente con se stesso —
+con le correzioni applicate è in [`docs/analisi_bias.md`](docs/analisi_bias.md).
 
 - **L'inventario delle unità argomentative è rumoroso.** La segmentazione in clausole spezza
   i periodi lunghi — la prosa classica ne soffre più di quella contemporanea — e frammenti o
@@ -164,9 +175,11 @@ permettersi di nasconderne di propri: le scelte dichiaratamente provvisorie stan
   riga mostra la `conf` del classificatore: sotto ~0.7 va presa come segnalazione debole. In
   valutazione: compattare le unità senza connettivi riconosciuti in un conteggio, lasciando
   il dettaglio nel JSON.
-- **`struttura_argomentativa` risente dello stile d'epoca.** Su testi a periodi lunghi il
-  valore basso è in parte un artefatto della segmentazione, non un difetto del testo: va
-  letto insieme agli altri componenti, non da solo.
+- **`struttura_argomentativa` e `qualità_sintattica` risentono dello stile d'epoca.** Su testi
+  a periodi lunghi il valore basso è in parte un artefatto della segmentazione e di ottimi
+  stilistici tarati su un registro contemporaneo, non un difetto del testo: vanno letti insieme
+  agli altri componenti, non da soli. Il Gulpease (formula di leggibilità italiana) è escluso
+  dal punteggio sui testi EN; gli ottimi restano da ricalibrare su un gold set.
 - **I giudizi LLM possono importare un quadro filosofico non dichiarato** — per esempio
   leggere un idealista dal metro di un realismo implicito. Mitigazione attuale: i candidati
   del pre-detect deterministico vanno giudicati uno per uno e il rigetto va motivato con
@@ -225,6 +238,7 @@ resh/
 ├── dataset/trilemma/, dataset/astratti/    gold set annotati per calibrazione ed eval
 ├── tests/                                  batterie di non-regressione ed eval
 ├── examples/                               testi ed esempi di report reali
+├── docs/analisi_bias.md                    analisi dei bias (codice + auto-coerenza) e correzioni
 └── curate_dataset.py                       curazione manuale run → dataset per calibrazione futura
 ```
 
