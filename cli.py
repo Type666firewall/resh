@@ -21,6 +21,17 @@ Sottocomandi DOCUMENTALI (map-reduce su paper intero, lato induttivo LLM):
   python -m resh.cli report-doc [RUN_UID] [--doc HASH_PREFIX] [--out report.md]
       RIGENERA il report markdown dal rapporto_json salvato (zero call LLM).
       Senza argomenti: ultimo run.
+
+Sottocomando FEEDBACK (giudizio dell'utente su un run già persistito, ledger append-only):
+  python -m resh.cli feedback <run_uid>
+      Interattivo: verdetto su ε, poi per ogni patologia — ANNOTAZIONE CIECA
+      (conf/sev/fonte/confermata di resh si rivelano solo DOPO il verdetto).
+  python -m resh.cli feedback <run_uid> --eps troppo_basso|troppo_alto|ok [--nota "..."]
+  python -m resh.cli feedback <run_uid> --pat N --verdetto valida|falso_positivo [--nota "..."]
+  python -m resh.cli feedback <run_uid> --manca "descrizione" [--nota "..."]
+  python -m resh.cli feedback <run_uid> --list        # storia di feedback del run
+  python -m resh.cli feedback --pending                # run senza alcun feedback
+  python -m resh.cli feedback --export                 # dataset → resh/data/dataset_feedback.csv
 """
 
 from __future__ import annotations
@@ -334,12 +345,193 @@ def _curate_main(argv: list[str]) -> int:
     return curate_main(argv)
 
 
+# ─── sottocomando feedback (giudizio utente, ledger append-only) ──────────
+
+
+def _feedback_list_main(run_uid: str) -> int:
+    from . import persistenza
+    rows = persistenza.list_feedback(run_uid=run_uid)
+    if not rows:
+        print(f"(nessun feedback registrato per {run_uid})")
+        return 0
+    for r in rows:
+        tgt = f" #{r['target']}" if r.get("target") is not None else ""
+        nota = f"  — {r['nota']}" if r.get("nota") else ""
+        print(f"{r['ts_creazione']}  [{r['ambito']}{tgt}]  {r['verdetto']}{nota}  "
+              f"(annotatore: {r['annotatore']})")
+    return 0
+
+
+def _feedback_pending_main() -> int:
+    from . import persistenza
+    già_visti = {r["run_uid"] for r in persistenza.list_feedback()}
+    runs = persistenza.list_runs() + persistenza.list_runs_documento()
+    pending = [r for r in runs if r["run_uid"] not in già_visti]
+    pending.sort(key=lambda r: r["ts_creazione"], reverse=True)
+    if not pending:
+        print("(nessun run in attesa di feedback)")
+        return 0
+    for r in pending:
+        eps = r.get("eps_resh", r.get("eps_doc"))
+        eps_str = f"{eps:.4f}" if eps is not None else "  —  "
+        print(f"{r['run_uid']}  {r['ts_creazione']}  ε={eps_str}")
+    return 0
+
+
+def _feedback_interactive_main(run_uid: str) -> int:
+    from . import persistenza
+
+    summary = persistenza.run_summary(run_uid)
+    if summary is None:
+        print(f"[ERRORE] run_uid non trovato: {run_uid}")
+        return 1
+
+    eps = summary["eps"]
+    pats = summary["patologie"]
+    eps_str = f"{eps:.4f}" if eps is not None else "—"
+    print(f"Run {run_uid}  ·  ε = {eps_str}  ·  {len(pats)} patologie rilevate\n")
+
+    while True:
+        resp = input("ε: [o]k  [a]lto (troppo alto)  [b]asso (troppo basso)  [s]kip → ").strip().lower()
+        if resp in ("o", "a", "b", "s"):
+            break
+        print("  (o/a/b/s)")
+    if resp != "s":
+        verdetto = {"o": "ok", "a": "troppo_alto", "b": "troppo_basso"}[resp]
+        nota = input("  nota (opzionale, invio per saltare): ").strip() or None
+        persistenza.save_feedback(run_uid, "eps", verdetto, nota=nota)
+        print(f"  → registrato: eps={verdetto}\n")
+
+    # Annotazione CIECA: mostra solo tipo + passaggio, MAI il giudizio di resh
+    # (conf/sev/fonte/confermata) prima del verdetto dell'utente — altrimenti
+    # il feedback sarebbe l'eco di resh, non un segnale indipendente.
+    if summary["source"] != "analisi":
+        print("(feedback per-patologia non disponibile sui run documentali, v1)")
+    elif not pats:
+        print("(nessuna patologia rilevata in questo run)")
+    else:
+        for i, p in enumerate(pats):
+            det = p.get("dettaglio", {}) or {}
+            passo = (det.get("match") or det.get("frase") or det.get("contesto")
+                     or det.get("argomento") or "")
+            passo = str(passo).replace("\n", " ")
+            if len(passo) > 200:
+                passo = passo[:197] + "…"
+            print(f"[{i}] tipo={p.get('tipo')}" + (f"  «{passo}»" if passo else ""))
+            while True:
+                resp = input("     [v]alida  [f]also positivo  [s]kip  [q]uit → ").strip().lower()
+                if resp in ("v", "f", "s", "q"):
+                    break
+                print("     (v/f/s/q)")
+            if resp == "q":
+                print("Interrotto.")
+                return 0
+            if resp == "s":
+                continue
+            verdetto = {"v": "valida", "f": "falso_positivo"}[resp]
+            nota = input("     nota (opzionale): ").strip() or None
+            persistenza.save_feedback(run_uid, "patologia", verdetto, target=i, nota=nota)
+            fl2 = det.get("fallacia_l2", "-")
+            conf = p.get("confidence")
+            sev = p.get("severita")
+            conf_str = f"{conf:.2f}" if isinstance(conf, (int, float)) else conf
+            sev_str = f"{sev:.2f}" if isinstance(sev, (int, float)) else sev
+            print(f"     → registrato: {verdetto}  "
+                  f"(resh: conf={conf_str} sev={sev_str} fonte={det.get('fonte', '-')} "
+                  f"confermata={det.get('confermata')} fallacia_l2={fl2})\n")
+
+    manca = input("Patologie che resh non ha rilevato? (testo libero, invio per saltare): ").strip()
+    if manca:
+        persistenza.save_feedback(run_uid, "patologia_mancante", manca)
+        print("  → registrata patologia mancante\n")
+
+    print("Feedback completato.")
+    return 0
+
+
+def _feedback_main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(
+        prog="resh.cli feedback",
+        description="Registra il giudizio dell'utente su un run già persistito (ledger append-only).")
+    ap.add_argument("run_uid", nargs="?", default=None,
+                    help="run_uid (Ψ_...) su cui dare feedback")
+    ap.add_argument("--eps", type=str, default=None,
+                    choices=["ok", "troppo_alto", "troppo_basso"],
+                    help="verdetto sull'epsilon complessivo del run")
+    ap.add_argument("--pat", type=int, default=None, metavar="N",
+                    help="indice della patologia (vedi --list o il report)")
+    ap.add_argument("--verdetto", type=str, default=None,
+                    choices=["valida", "falso_positivo"],
+                    help="verdetto sulla patologia indicata da --pat")
+    ap.add_argument("--manca", type=str, default=None, metavar="DESCRIZIONE",
+                    help="segnala una patologia che resh non ha rilevato")
+    ap.add_argument("--nota", type=str, default=None, help="nota libera per il feedback")
+    ap.add_argument("--list", action="store_true", help="mostra la storia di feedback del run")
+    ap.add_argument("--pending", action="store_true",
+                    help="elenca i run senza alcun feedback registrato (più recenti prima)")
+    ap.add_argument("--export", action="store_true",
+                    help="esporta il dataset di training (resh/data/dataset_feedback.csv)")
+    args = ap.parse_args(argv)
+
+    from . import persistenza
+
+    if args.export:
+        persistenza.export_feedback_dataset()
+        return 0
+
+    if args.pending:
+        return _feedback_pending_main()
+
+    if not args.run_uid:
+        print("[ERRORE] serve un run_uid (o --export / --pending)")
+        return 1
+
+    if args.list:
+        return _feedback_list_main(args.run_uid)
+
+    agito = False
+    if args.eps:
+        try:
+            persistenza.save_feedback(args.run_uid, "eps", args.eps, nota=args.nota)
+            print(f"[OK] feedback eps={args.eps} registrato su {args.run_uid}")
+        except ValueError as exc:
+            print(f"[ERRORE] {exc}")
+            return 1
+        agito = True
+    if args.pat is not None:
+        if not args.verdetto:
+            print("[ERRORE] --pat richiede --verdetto valida|falso_positivo")
+            return 1
+        try:
+            persistenza.save_feedback(args.run_uid, "patologia", args.verdetto,
+                                      target=args.pat, nota=args.nota)
+            print(f"[OK] feedback patologia #{args.pat}={args.verdetto} registrato su {args.run_uid}")
+        except ValueError as exc:
+            print(f"[ERRORE] {exc}")
+            return 1
+        agito = True
+    if args.manca:
+        try:
+            persistenza.save_feedback(args.run_uid, "patologia_mancante", args.manca, nota=args.nota)
+            print(f"[OK] patologia mancante registrata su {args.run_uid}")
+        except ValueError as exc:
+            print(f"[ERRORE] {exc}")
+            return 1
+        agito = True
+
+    if agito:
+        return 0
+
+    return _feedback_interactive_main(args.run_uid)
+
+
 _SUBCOMMANDS = {
     "documento":  _documento_main,
     "obiettivo":  _obiettivo_main,
     "runs":       _runs_main,
     "report-doc": _report_doc_main,
     "curate":     _curate_main,
+    "feedback":   _feedback_main,
 }
 
 

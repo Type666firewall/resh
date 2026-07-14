@@ -111,6 +111,24 @@ resh documento my_paper.md --completo --lang en
 
 (`python -m resh.cli` resta equivalente a `resh` se si preferisce invocare il modulo.)
 
+**Feedback su un run già fatto** (giudizio dell'utente nel ledger, append-only — zero ML,
+gira ovunque):
+
+```bash
+resh feedback Ψ_abc123456789_001              # interattivo: eps, poi patologia per patologia
+resh feedback Ψ_..._001 --eps troppo_basso    # non interattivo
+resh feedback Ψ_..._001 --pat 3 --verdetto falso_positivo
+resh feedback Ψ_..._001 --list                # storia di feedback del run
+resh feedback --pending                        # run senza alcun feedback
+resh feedback --export                         # dataset → resh/data/dataset_feedback.csv
+```
+
+Il flusso interattivo è **cieco per costruzione**: mostra tipo e passaggio della patologia,
+mai la confidenza o la fonte di resh, finché non hai dato il tuo verdetto — altrimenti il
+feedback sarebbe un'eco del giudizio di resh, non un segnale indipendente da cui imparare.
+resh non rilegge ancora questi dati per correggersi: il ledger li accumula in vista di una
+calibrazione futura (dichiarata, non promessa).
+
 Uso come libreria:
 
 ```python

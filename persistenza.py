@@ -35,6 +35,7 @@ Riferimenti
 
 from __future__ import annotations
 
+import csv
 import datetime
 import hashlib
 import json
@@ -46,6 +47,8 @@ from pathlib import Path
 from typing import Any, Optional
 
 from .schemas import RapportoResh
+
+_DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
 # ─── DB schema & init ──────────────────────────────────────────────────
@@ -118,6 +121,22 @@ CREATE TABLE IF NOT EXISTS analisi_documento (
 
 CREATE INDEX IF NOT EXISTS idx_analisi_doc_dochash ON analisi_documento(doc_hash);
 CREATE INDEX IF NOT EXISTS idx_analisi_doc_ts      ON analisi_documento(ts_creazione);
+
+CREATE TABLE IF NOT EXISTS feedback (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_uid      TEXT NOT NULL,        -- FK logica verso analisi / analisi_documento
+    ambito       TEXT NOT NULL,        -- 'eps' | 'patologia' | 'patologia_mancante' | 'nota'
+    target       TEXT,                 -- ambito='patologia': indice in patologie_strutturate
+    ancora       TEXT,                 -- "tipo|fallacia_l2|span" della patologia, per verifica
+    verdetto     TEXT NOT NULL,        -- eps: ok|troppo_alto|troppo_basso
+                                       -- patologia: valida|falso_positivo
+                                       -- patologia_mancante/nota: testo libero
+    nota         TEXT,
+    annotatore   TEXT NOT NULL,        -- chi giudica (env P3_RESH_ANNOTATORE o $USER)
+    ts_creazione TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_runuid ON feedback(run_uid);
 """
 
 
@@ -976,3 +995,375 @@ def get_run_documento(
     out = dict(row)
     out["rapporto"] = json.loads(out.pop("rapporto_json"))
     return out
+
+
+# ─── feedback dell'utente (ledger append-only) ─────────────────────────
+#
+# Primo anello del loop di calibrazione: resh scrive la propria storia
+# (save_run/save_run_documento) ma finora non la rileggeva mai. Qui si
+# registra il giudizio dell'utente su un run già persistito — a livello di
+# singolo rilievo (patologia) o di ε complessivo — append-only come il resto
+# del ledger. `export_feedback_dataset` produce il dataset per la futura
+# calibrazione (RF/Δε): quella parte resta fuori scope qui, solo cattura.
+
+_AMBITI_VERDETTI = {
+    "eps":       {"ok", "troppo_alto", "troppo_basso"},
+    "patologia": {"valida", "falso_positivo"},
+}
+_AMBITI_LIBERI = {"patologia_mancante", "nota"}   # verdetto = testo libero, no target
+
+
+def _default_annotatore() -> str:
+    return (os.getenv("P3_RESH_ANNOTATORE") or os.getenv("USER")
+            or os.getenv("USERNAME") or "sconosciuto")
+
+
+def _run_source(conn: sqlite3.Connection, run_uid: str) -> Optional[str]:
+    """`'analisi'` | `'analisi_documento'` | `None` (run inesistente)."""
+    if conn.execute("SELECT 1 FROM analisi WHERE run_uid=?", (run_uid,)).fetchone():
+        return "analisi"
+    if conn.execute("SELECT 1 FROM analisi_documento WHERE run_uid=?", (run_uid,)).fetchone():
+        return "analisi_documento"
+    return None
+
+
+def _patologie_di_run(conn: sqlite3.Connection, run_uid: str) -> Optional[list[dict]]:
+    """`patologie_strutturate` del run — solo run per-testo (tabella `analisi`).
+
+    `None` se il run non esiste in `analisi` (incluso il caso: è un run
+    documentale — le sue patologie sono stringhe legacy per chunk, non
+    indicizzabili in modo stabile; il feedback per-patologia non le copre, v1).
+    """
+    row = conn.execute(
+        "SELECT rapporto_json FROM analisi WHERE run_uid=?", (run_uid,)
+    ).fetchone()
+    if row is None:
+        return None
+    rapporto = json.loads(row["rapporto_json"])
+    return rapporto.get("patologie_strutturate") or []
+
+
+def _ancora_patologia(pat: dict) -> str:
+    """`"tipo|fallacia_l2|span"` — ridondanza di verifica per il `target`."""
+    tipo = pat.get("tipo", "?")
+    det = pat.get("dettaglio", {}) or {}
+    fl2 = det.get("fallacia_l2", "-")
+    span = pat.get("span_char")
+    span_str = f"{span[0]}-{span[1]}" if span else "-"
+    return f"{tipo}|{fl2}|{span_str}"
+
+
+def run_summary(run_uid: str, db_path: Optional[Path] = None) -> Optional[dict]:
+    """Riepilogo minimo di un run per la CLI di feedback.
+
+    Ritorna `{"source": "analisi"|"analisi_documento", "eps": float|None,
+    "patologie": list[dict]}` — `patologie` è `[]` per i run documentali (v1:
+    solo feedback `eps`/`nota` lì). `None` se il run non esiste in nessuna
+    delle due tabelle.
+    """
+    db = init_db(db_path)
+    conn = _connect(db)
+    try:
+        source = _run_source(conn, run_uid)
+        if source is None:
+            return None
+        if source == "analisi":
+            row = conn.execute(
+                "SELECT eps_resh FROM analisi WHERE run_uid=?", (run_uid,)).fetchone()
+            pats = _patologie_di_run(conn, run_uid) or []
+            return {"source": source, "eps": row["eps_resh"] if row else None, "patologie": pats}
+        row = conn.execute(
+            "SELECT eps_doc FROM analisi_documento WHERE run_uid=?", (run_uid,)).fetchone()
+        return {"source": source, "eps": row["eps_doc"] if row else None, "patologie": []}
+    finally:
+        conn.close()
+
+
+def save_feedback(
+    run_uid: str,
+    ambito: str,
+    verdetto: str,
+    *,
+    target: Optional[int] = None,
+    nota: Optional[str] = None,
+    annotatore: Optional[str] = None,
+    db_path: Optional[Path] = None,
+) -> dict:
+    """Registra un feedback dell'utente su un run già persistito.
+
+    Append-only: per correggersi si aggiunge una NUOVA riga (mai UPDATE);
+    `feedback_effettivo` risolve l'ultima riga per (run_uid, ambito, target).
+    L'incoerenza dell'utente nel tempo resta nel ledger come dato, non viene
+    sovrascritta — a parità con l'onestà che resh chiede ai testi.
+
+    `ambito`:
+      - `"eps"`: `verdetto` in {ok, troppo_alto, troppo_basso}, nessun `target`.
+      - `"patologia"`: `verdetto` in {valida, falso_positivo}, `target` = indice
+        nella lista `patologie_strutturate` del run (solo run per-testo, v1).
+      - `"patologia_mancante"` / `"nota"`: `verdetto` = testo libero, nessun
+        `target` — righe che si ACCUMULANO (non "l'ultima vince").
+
+    Solleva `ValueError` su: run inesistente, ambito ignoto, verdetto fuori dal
+    vocabolario dell'ambito, `target` mancante/fuori range/non applicabile.
+    """
+    if ambito not in _AMBITI_VERDETTI and ambito not in _AMBITI_LIBERI:
+        raise ValueError(
+            f"ambito sconosciuto: {ambito!r} (attesi: "
+            f"{sorted(_AMBITI_VERDETTI) + sorted(_AMBITI_LIBERI)})")
+
+    if ambito != "patologia" and target is not None:
+        raise ValueError(f"target non applicabile per ambito={ambito!r}")
+
+    db = init_db(db_path)
+    conn = _connect(db)
+    try:
+        source = _run_source(conn, run_uid)
+        if source is None:
+            raise ValueError(f"run_uid non trovato: {run_uid}")
+
+        ancora = None
+        if ambito == "patologia":
+            if target is None:
+                raise ValueError("ambito='patologia' richiede `target` (indice del rilievo)")
+            if source != "analisi":
+                raise ValueError(
+                    f"feedback per-patologia non supportato su run documentali ({run_uid}): "
+                    "le patologie sono stringhe legacy per chunk, non indicizzabili (v1)")
+            pats = _patologie_di_run(conn, run_uid) or []
+            if not (0 <= target < len(pats)):
+                raise ValueError(
+                    f"target={target} fuori range: il run ha {len(pats)} patologie "
+                    f"(0..{len(pats) - 1})")
+            ancora = _ancora_patologia(pats[target])
+
+        if ambito in _AMBITI_VERDETTI:
+            vocab = _AMBITI_VERDETTI[ambito]
+            if verdetto not in vocab:
+                raise ValueError(
+                    f"verdetto {verdetto!r} non valido per ambito={ambito!r} "
+                    f"(attesi: {sorted(vocab)})")
+        else:
+            if not (verdetto or "").strip():
+                raise ValueError(f"ambito={ambito!r} richiede un verdetto (testo) non vuoto")
+
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        chi = annotatore or _default_annotatore()
+        target_str = str(target) if target is not None else None
+
+        cur = conn.execute(
+            """INSERT INTO feedback
+               (run_uid, ambito, target, ancora, verdetto, nota, annotatore, ts_creazione)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (run_uid, ambito, target_str, ancora, verdetto, nota, chi, now),
+        )
+        conn.commit()
+        row_id = cur.lastrowid
+    finally:
+        conn.close()
+
+    return {
+        "id": row_id, "run_uid": run_uid, "ambito": ambito, "target": target,
+        "ancora": ancora, "verdetto": verdetto, "nota": nota,
+        "annotatore": chi, "ts_creazione": now,
+    }
+
+
+def list_feedback(
+    run_uid: Optional[str] = None,
+    ambito: Optional[str] = None,
+    db_path: Optional[Path] = None,
+) -> list[dict]:
+    """Storia COMPLETA del feedback (append-only: nessuna riga persa/sovrascritta)."""
+    db = init_db(db_path)
+    conn = _connect(db)
+    try:
+        clauses, params = [], []
+        if run_uid:
+            clauses.append("run_uid=?"); params.append(run_uid)
+        if ambito:
+            clauses.append("ambito=?"); params.append(ambito)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        cur = conn.execute(
+            f"SELECT * FROM feedback {where} ORDER BY ts_creazione ASC", params)
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def feedback_effettivo(run_uid: str, db_path: Optional[Path] = None) -> dict:
+    """Risolve la storia append-only in stato CORRENTE del giudizio dell'utente.
+
+    Per `ambito` a target singolo (`eps`, `patologia`) l'ultima riga per
+    `ts_creazione` vince; `patologia_mancante`/`nota` si accumulano (sono log,
+    non correzioni di un target). È la vista che il futuro calcolo di Δε
+    consumerà — non ancora usata per modulare ε qui.
+
+    Ritorna `{"eps": dict|None, "patologie": {target_str: dict}, "patologie_mancanti": [...], "note": [...]}`.
+    """
+    rows = list_feedback(run_uid=run_uid, db_path=db_path)
+    eps_fb: Optional[dict] = None
+    pat_fb: dict[str, dict] = {}
+    mancanti: list[dict] = []
+    note: list[dict] = []
+    for r in rows:  # ASC: l'ultima occorrenza sovrascrive le precedenti
+        if r["ambito"] == "eps":
+            eps_fb = r
+        elif r["ambito"] == "patologia":
+            pat_fb[r["target"]] = r
+        elif r["ambito"] == "patologia_mancante":
+            mancanti.append(r)
+        elif r["ambito"] == "nota":
+            note.append(r)
+    return {"eps": eps_fb, "patologie": pat_fb,
+            "patologie_mancanti": mancanti, "note": note}
+
+
+def export_feedback_dataset(
+    db_path: Optional[Path] = None,
+    *,
+    out_dir: Optional[Path] = None,
+) -> Optional[Path]:
+    """Esporta un dataset piatto per la futura calibrazione (RF/Δε) — solo
+    cattura qui, il training resta un obiettivo successivo.
+
+    `out_dir` (default `resh/data/`): directory di scrittura del CSV — separato
+    da `db_path` così i test possono usare un DB temporaneo SENZA scrivere
+    nella cartella dati reale del repo.
+
+    Una riga per (run_uid, ambito, target) risolto — feature del rilievo
+    (tipo, fallacia_l2, fonte, confidence, severità, lunghezza span,
+    `confermata` deterministico di resh) + contesto del run (ε, componenti
+    `comp_*`) + `label` = verdetto CORRENTE dell'utente. `patologia_mancante`
+    e `nota` producono righe separate (senza feature di rilievo).
+
+    Anti-overfitting: `n_revisioni` e `contraddetta` per riga (quante volte
+    l'utente ha corretto quel giudizio, e se i verdetti divergono) — il
+    training futuro potrà pesare meno le label instabili invece di trattare
+    l'annotatore come un oracolo coerente. `ts_feedback`/`annotatore` per ogni
+    riga abilitano split temporali e, in futuro, disaccordo inter-annotatore.
+    I segnali originali di resh restano come feature: la calibrazione impara
+    una correzione RELATIVA ad essi, mai una sostituzione silenziosa.
+
+    Scrive `resh/data/dataset_feedback.csv` + sidecar `.meta.json` (schema e
+    conteggio righe, per non mischiare export di schemi diversi inosservati).
+    Ritorna `None` se non c'è alcun feedback registrato o nulla di esportabile
+    (es. patologie i cui indici non sono più validi — scartate, mai finte).
+    """
+    from .epsilon import COMPONENTI as _EPS_COMPONENTI
+
+    db = init_db(db_path)
+    conn = _connect(db)
+    try:
+        all_fb = [dict(r) for r in conn.execute(
+            "SELECT * FROM feedback ORDER BY ts_creazione ASC").fetchall()]
+    finally:
+        conn.close()
+
+    if not all_fb:
+        print("Nessun feedback registrato.")
+        return None
+
+    storia: dict[tuple, list[dict]] = {}
+    for r in all_fb:
+        key = (r["run_uid"], r["ambito"], r["target"])
+        storia.setdefault(key, []).append(r)
+
+    def _riga_base() -> dict:
+        row = {
+            "tipo": "", "fallacia_l2": "", "fonte": "",
+            "confidence": None, "severita": None, "span_len": None,
+            "confermata_resh": None, "eps": None,
+        }
+        for k in _EPS_COMPONENTI:
+            row[f"comp_{k}"] = None
+        return row
+
+    rows: list[dict] = []
+    conn = _connect(db)
+    try:
+        for (run_uid, ambito, target), hist in storia.items():
+            ultimo = hist[-1]                          # ASC → l'ultimo vince
+            n_rev = len(hist)
+            contraddetta = int(len({h["verdetto"] for h in hist}) > 1)
+
+            if ambito in ("patologia_mancante", "nota"):
+                # log, non correzioni: ogni riga della storia resta un record
+                for h in hist:
+                    row = _riga_base()
+                    row.update({
+                        "run_uid": run_uid, "ambito": ambito,
+                        "label": h["verdetto"], "nota": h.get("nota") or "",
+                        "n_revisioni": 1, "contraddetta": 0,
+                        "ts_feedback": h["ts_creazione"], "annotatore": h["annotatore"],
+                    })
+                    rows.append(row)
+                continue
+
+            run_row = conn.execute(
+                "SELECT eps_resh, componenti_epsilon FROM analisi WHERE run_uid=?",
+                (run_uid,)).fetchone()
+            comp = json.loads(run_row["componenti_epsilon"]) if run_row else {}
+            row = _riga_base()
+            row["run_uid"] = run_uid
+            row["ambito"] = ambito
+            row["eps"] = run_row["eps_resh"] if run_row else None
+            for k in _EPS_COMPONENTI:
+                row[f"comp_{k}"] = comp.get(k)
+
+            if ambito == "patologia":
+                pats = _patologie_di_run(conn, run_uid) or []
+                idx = int(target)
+                if not (0 <= idx < len(pats)):
+                    continue   # run/patologie cambiati da allora: scarta, non inventa
+                pat = pats[idx]
+                det = pat.get("dettaglio", {}) or {}
+                span = pat.get("span_char")
+                row["tipo"] = pat.get("tipo")
+                row["fallacia_l2"] = det.get("fallacia_l2", "")
+                row["fonte"] = det.get("fonte", "")
+                row["confidence"] = pat.get("confidence")
+                row["severita"] = pat.get("severita")
+                row["span_len"] = (span[1] - span[0]) if span else None
+                row["confermata_resh"] = det.get("confermata")
+
+            row["label"] = ultimo["verdetto"]
+            row["nota"] = ultimo.get("nota") or ""
+            row["n_revisioni"] = n_rev
+            row["contraddetta"] = contraddetta
+            row["ts_feedback"] = ultimo["ts_creazione"]
+            row["annotatore"] = ultimo["annotatore"]
+            rows.append(row)
+    finally:
+        conn.close()
+
+    if not rows:
+        print("Nessun dato esportabile (patologie/target non più validi?).")
+        return None
+
+    fieldnames = list(rows[0].keys())
+    for r in rows:
+        for k in r:
+            if k not in fieldnames:
+                fieldnames.append(k)
+
+    target_dir = Path(out_dir) if out_dir is not None else _DATA_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+    out_csv = target_dir / "dataset_feedback.csv"
+    with open(out_csv, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    meta = {
+        "generato": datetime.datetime.now().isoformat(timespec="seconds"),
+        "righe": len(rows),
+        "colonne": fieldnames,
+        "comp_keys": list(_EPS_COMPONENTI),
+    }
+    meta_file = out_csv.with_suffix(".meta.json")
+    meta_file.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    print(f"Dataset feedback esportato: {out_csv.absolute()}")
+    print(f"  righe: {len(rows)}  |  colonne: {len(fieldnames)}")
+    print(f"  meta:  {meta_file.absolute()}")
+    return out_csv
