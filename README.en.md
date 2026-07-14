@@ -109,6 +109,24 @@ resh mio_testo.md
 
 (`python -m resh.cli` is equivalent to `resh` if you prefer invoking the module.)
 
+**Feedback on a past run** (the user's judgment into the ledger, append-only — zero ML,
+runs everywhere):
+
+```bash
+resh feedback Ψ_abc123456789_001              # interactive: eps, then pathology by pathology
+resh feedback Ψ_..._001 --eps troppo_basso    # non-interactive
+resh feedback Ψ_..._001 --pat 3 --verdetto falso_positivo
+resh feedback Ψ_..._001 --list                # feedback history for the run
+resh feedback --pending                        # runs with no feedback yet
+resh feedback --export                         # dataset → resh/data/dataset_feedback.csv
+```
+
+The interactive flow is **blind by construction**: it shows the pathology's type and passage,
+never resh's confidence or source, until you've given your own verdict — otherwise the
+feedback would echo resh's judgment instead of being an independent signal to learn from.
+resh does not yet read this data back to correct itself: the ledger accumulates it toward a
+future calibration (declared, not promised).
+
 Library usage:
 
 ```python
