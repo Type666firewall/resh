@@ -86,6 +86,9 @@ PESO_SEQUITUR = _peso_sequitur()
 
 # ─── helpers numerici ────────────────────────────────────────────────────────
 
+# NLI/embedding/numpy lasciano scalari e array numpy dentro i dict che finiscono
+# in yaml_out → json.dumps si spezzerebbe su np.float32/np.bool_ senza questa
+# normalizzazione preventiva (RapportoResh dev'essere serializzabile as-is).
 def _to_native(obj):
     if isinstance(obj, dict):
         return {k: _to_native(v) for k, v in obj.items()}
@@ -295,6 +298,12 @@ async def analizza_async(
     integrita_io, integrita_dett = await _run_in_thread(_valuta_io, teleologia, fonte=obiettivo_fonte)
 
     # verifiche logiche: 1 verifica per argomento (fallacia O non-sequitur ⇒ non valido)
+    # Nessun indice condiviso lega Argomento (dalle proposizioni segmentate) alle
+    # Patologia (span sul testo grezzo): vengono da passaggi diversi sulla stessa
+    # frase. Si riallineano ri-cercando il testo dell'argomento nel documento e
+    # controllando se cade dentro (o poco dopo, +200 char di margine per code
+    # di frase/punteggiatura) lo span della fallacia — match grossolano ma l'unico
+    # disponibile senza rifare la segmentazione con offset condivisi.
     verifiche: list[VerificaLogica] = []
     fallacy_spans = [(p.span_char, p.dettaglio.get("fallacia_l2", "?"))
                      for p in fallacie_pats if p.span_char]
@@ -415,6 +424,10 @@ async def analizza_async(
             ))
 
     patologie_legacy = [p.as_message() for p in pat_struct]
+    # Soglia euristica (non calibrata su corpus, come i pesi in epsilon.py): un
+    # testo con ε quasi perfetto e zero patologie è sospetto quanto uno basso —
+    # potrebbe segnalare che il dubbio (ऋ) non sta esercitando abbastanza
+    # resistenza contro la certezza (Θ), non che il testo sia davvero impeccabile.
     if eps_resh > 0.95:
         patologie_legacy.append("ε_ऋ molto alto: verificare bilanciamento con Θ (rischio paralisi)")
 

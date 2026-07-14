@@ -330,6 +330,11 @@ def pre_detect_trilemma(testo: str, rapporto_resh=None) -> list[TrilemmaHit]:
     hits: list[TrilemmaHit] = _scan_markers(testo, _load_trilemma_markers())
 
     # 2. Segnali dal deterministico (se disponibile).
+    # Sconto ×0.8 sulla confidence: qui si sta REINTERPRETANDO un segnale nato
+    # per un altro scopo (NON_SEQUITUR/circolarità di sequitur.py) come hit
+    # Trilemma — un'inferenza su cosa implica il pattern, non una rilevazione
+    # diretta del corno. Meno affidabile del match regex diretto (_scan_markers),
+    # quindi pesa meno nel confronto det/ind di _confronta_trilemma.
     if rapporto_resh is not None:
         for pat in getattr(rapporto_resh, "patologie_strutturate", []):
             tipo_val = getattr(pat.tipo, "value", str(pat.tipo))
@@ -706,6 +711,9 @@ def analizza_induttivo(
         from .lambda_space import G, resolve
         O = resolve(G.ESTRAI_OBIETTIVO)(testo)    # lazy: Λ spina dorsale
 
+    # arsenale/trilemma restano fuori da `da_eseguire`: non sono saltati, hanno
+    # ciascuno il proprio blocco dedicato più sotto (payload/feed diversi dal
+    # generico _OUT_GENERICO — trilemma riceve pure Arsenale + ऋ¹ come contesto).
     da_eseguire = assi if assi is not None else [a for a, _ in _ASSI if a not in ("arsenale", "trilemma")]
 
     # 2. Arsenale (3 assi + contrasto in una call).

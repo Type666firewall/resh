@@ -117,6 +117,9 @@ class Gamma:
 
 
 # ─── registry Λ_ऋ ──────────────────────────────────────────────────────
+# frozenset, non list/dict: Λ non si muta a runtime — evolve solo aggiungendo
+# un Gamma() qui nel codice (nuovo commit), mai con un .add()/.pop() dell'agente
+# durante un'analisi. L'immutabilità è la garanzia, non un dettaglio di tipo.
 
 LAMBDA_RESH: frozenset[Gamma] = frozenset({
 
@@ -1004,4 +1007,6 @@ def _audit_invariants() -> None:
             assert g.eps_feeds == (), f"{g.name}: eps_feeds assegnato ma eps_role={g.eps_role!r}"
 
 
+# Eseguito a IMPORT time (non lazy): un invariante rotto deve fermare il modulo
+# subito, non emergere a metà run quando un core prova a risolvere un γ malformato.
 _audit_invariants()
